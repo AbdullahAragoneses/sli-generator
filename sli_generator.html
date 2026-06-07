@@ -44,10 +44,20 @@
   .btn-apply { width:100%; padding:11px 14px; background:#1a1a2e; color:#f0c060; border:none; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; }
   .btn-apply:hover { background:#2d2d5e; }
   .calc-status { font-size:11px; margin-bottom:12px; padding:6px 10px; border-radius:4px; background:#f5f5f5; }
+  /* Email summary panel */
+  #email-wrapper { max-width:940px; margin:0 auto 40px auto; padding:0 12px; }
+  .email-label { background:#1a1a2e; color:#f0c060; font-size:10px; text-align:center; padding:6px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; font-weight:bold; }
+  .email-panel { background:white; padding:18px 22px; box-shadow:0 2px 12px rgba(0,0,0,.12); border-radius:0 0 4px 4px; }
+  .email-subj { font-size:11px; font-weight:bold; text-transform:uppercase; color:#666; letter-spacing:.5px; margin-bottom:4px; }
+  .email-subj-val { font-size:14px; font-weight:bold; color:#1a1a2e; background:#f5f5f5; padding:7px 12px; border-radius:4px; margin-bottom:14px; letter-spacing:.3px; }
+  #email-body { width:100%; min-height:280px; font-family:Arial,sans-serif; font-size:13px; line-height:1.7; color:#222; border:1px solid #ddd; border-radius:5px; padding:14px; background:#fafffe; resize:vertical; }
+  .btn-copy { background:#1a1a2e; color:#f0c060; border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
+  .btn-copy:hover { background:#2d2d5e; }
+  .copy-confirm { font-size:11px; color:#2a9d2a; margin-left:10px; display:none; }
 }
 
 @media print {
-  #topbar, #form-panel, .preview-label { display:none !important; }
+  #topbar, #form-panel, .preview-label, #email-wrapper { display:none !important; }
   body { margin:0; padding:0; background:white; }
   #preview-wrapper { max-width:100%; margin:0; padding:0; }
   #sli-document { padding:2mm; box-shadow:none; border-radius:0; }
@@ -353,6 +363,22 @@
 <div id="preview-wrapper">
   <div class="preview-label">Live Preview — Ctrl+P to Print / Save as PDF</div>
   <div id="sli-document"></div>
+</div>
+
+<div id="email-wrapper">
+  <div class="email-label">✉ Email Summary — Copy &amp; Paste to Send with PDF</div>
+  <div class="email-panel">
+    <div class="email-subj">Subject Line</div>
+    <div class="email-subj-val" id="email-subject">—</div>
+    <div class="email-subj">Email Body</div>
+    <textarea id="email-body" readonly></textarea>
+    <br>
+    <button class="btn-copy" onclick="copyEmail()">Copy Email Body</button>
+    <span class="copy-confirm" id="copy-confirm">Copied!</span>
+    &nbsp;&nbsp;
+    <button class="btn-copy" onclick="copySubject()" style="background:#444">Copy Subject</button>
+    <span class="copy-confirm" id="copy-confirm-subj">Copied!</span>
+  </div>
 </div>
 
 <script>
@@ -824,7 +850,7 @@ function getSigHtml(responsible) {
     return '<img src="./logos/sig_abdullah.png" style="height:70px;max-width:220px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
   }
   if (n.indexOf('angelique') >= 0 || n.indexOf('angie') >= 0) {
-    return '<img src="./logos/sig_angie.png" style="height:70px;max-width:220px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
+    return '<img src="./logos/sig_angie.png" style="height:45px;max-width:160px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
   }
   return '';
 }
@@ -981,15 +1007,122 @@ function renderSLI() {
 }
 
 function render() {
+  var now = new Date();
+  document.getElementById('f-time').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
   document.getElementById('sli-document').innerHTML = renderSLI();
+  generateEmail();
   saveFormState();
 }
 
+setInterval(render, 60000);
+
+/* ══ EMAIL SUMMARY ══════════════════════════════════════════════════════════ */
+function dayName(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr + 'T00:00:00');
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+}
+function niceDate(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr + 'T00:00:00');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+function firstNameFrom(contactStr) {
+  if (!contactStr) return 'Brinks Team';
+  var name = contactStr.split('—')[0].split('-')[0].trim();
+  return name || 'Brinks Team';
+}
+function generateEmail() {
+  var collDate   = get('f-coll-date');
+  var collName   = get('f-coll-name');
+  var collAddr   = get('f-coll-addr');
+  var delivName  = get('f-deliv-name');
+  var delivAddr  = get('f-deliv-addr');
+  var delivCont  = get('f-deliv-contact');
+  var value      = get('f-value');
+  var weight     = get('f-weight');
+  var goods      = get('f-goods');
+  var responsible = get('f-responsible') || 'Abdullah Aragoneses';
+
+  var day      = dayName(collDate);
+  var dateNice = niceDate(collDate);
+  var recipient = firstNameFrom(delivCont);
+
+  /* Subject */
+  var subject = 'BRINKS Collection & Delivery' + (dateNice ? ' ' + dateNice : '');
+  document.getElementById('email-subject').textContent = subject;
+
+  /* Goods bullets — each non-empty line becomes "- line" */
+  var goodsLines = (goods || '').split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l; });
+  var bulletLines = goodsLines.length
+    ? goodsLines.map(function(l){ return '- ' + l; }).join('\n')
+    : '- [goods not specified]';
+
+  /* Collection / delivery address blocks */
+  var collBlock  = [collName, collAddr].filter(function(x){ return x && x.trim(); }).join('\n');
+  var delivBlock = [delivName, delivAddr].filter(function(x){ return x && x.trim(); }).join('\n');
+
+  var collSection  = collBlock  || '[collection address not set]';
+  var delivSection = delivBlock || '[delivery address not set]';
+
+  var valueLine  = value  ? '- Value: ' + value  : '- Value: [not set]';
+  var weightLine = weight ? '- Estimated Weight: ' + weight + ' kg' : '- Estimated Weight: [not set]';
+
+  var collDateLine = day && dateNice ? 'a collection on ' + day + ' ' + dateNice : 'a collection on the date shown in the attached SLI';
+
+  var body =
+    'Dear @' + recipient + ' and team,\n\n' +
+    'I hope this message finds you well.\n\n' +
+    'Please find attached the relevant SLI for ' + collDateLine + '.\n\n' +
+    'Details:\n\n' +
+    bulletLines + '\n\n' +
+    valueLine + '\n' +
+    weightLine + '\n\n' +
+    'Collection Address:\n' + collSection + '\n\n' +
+    'Delivery Address:\n' + delivSection + '\n\n' +
+    'Kindly confirm at your earliest convenience.';
+
+  document.getElementById('email-body').value = body;
+}
+
+function copyEmail() {
+  var el = document.getElementById('email-body');
+  el.select();
+  document.execCommand('copy');
+  var c = document.getElementById('copy-confirm');
+  c.style.display = 'inline';
+  setTimeout(function(){ c.style.display = 'none'; }, 2000);
+}
+function copySubject() {
+  var text = document.getElementById('email-subject').textContent;
+  navigator.clipboard.writeText(text);
+  var c = document.getElementById('copy-confirm-subj');
+  c.style.display = 'inline';
+  setTimeout(function(){ c.style.display = 'none'; }, 2000);
+}
+
 /* ══ PRINT ══════════════════════════════════════════════════════════════════ */
+function sliFileName() {
+  var dateStr = get('f-date');
+  var dateFmt = '';
+  if (dateStr) {
+    var parts = dateStr.split('-');
+    var yy = parts[0].slice(2);
+    dateFmt = parts[2] + '.' + parts[1] + '.' + yy;
+  }
+  return 'Shippers Letter of Instruction SA Bullion' +
+    (dateFmt ? ' ' + dateFmt : '') +
+    ' - GLD' + invoiceNum;
+}
+
 function printSLI() {
   render();
+  var origTitle = document.title;
+  document.title = sliFileName();
   setTimeout(function() {
     window.print();
+    document.title = origTitle;
     setTimeout(function() {
       var next = invoiceNum + 1;
       var ok = confirm(
