@@ -1,0 +1,1011 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLI Generator — SA Bullion</title>
+<style>
+@media screen {
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0; background:#eef0f5; font-family:Arial,sans-serif; font-size:13px; color:#222; }
+  #topbar { background:#1a1a2e; color:white; padding:13px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:200; box-shadow:0 2px 10px rgba(0,0,0,.4); }
+  #topbar h1 { margin:0; font-size:16px; color:#f0c060; }
+  #topbar p  { margin:0; font-size:11px; color:#aaa; }
+  #form-panel { max-width:940px; margin:18px auto; padding:0 12px; }
+  .card { background:white; border-radius:8px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 5px rgba(0,0,0,.08); }
+  .card h2 { margin:0 0 13px 0; font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#1a1a2e; border-bottom:2px solid #1a1a2e; padding-bottom:6px; }
+  .card-calc { border:2px solid #f0c060; background:#fffdf5; }
+  .card-calc h2 { color:#8a6800; border-color:#f0c060; }
+  .fg { display:grid; gap:11px; margin-bottom:11px; }
+  .fg2 { grid-template-columns:1fr 1fr; }
+  .fg3 { grid-template-columns:1fr 1fr 1fr; }
+  .fg4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+  .fg1 { grid-template-columns:1fr; }
+  label { display:block; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:.5px; color:#666; margin-bottom:3px; }
+  input[type=text], input[type=date], input[type=time], select, textarea { width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:5px; font-size:13px; font-family:Arial,sans-serif; color:#222; background:#fafafa; transition:border-color .15s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:#1a1a2e; background:white; }
+  textarea { resize:vertical; min-height:52px; }
+  select { cursor:pointer; }
+  .route-select { font-size:14px; font-weight:bold; padding:10px 12px; background:#fff8e8; border:2px solid #f0c060; cursor:pointer; }
+  .input-manual { background:#fffbea !important; border-color:#ddc84a !important; }
+  .invoice-badge { background:#fff8e8; border:2px solid #f0c060; border-radius:6px; padding:7px 12px; font-size:20px; font-weight:bold; color:#1a1a2e; letter-spacing:2px; display:block; text-align:center; }
+  .inv-btns { display:flex; gap:5px; margin-top:5px; }
+  .inv-btn { flex:1; padding:5px; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:11px; background:#f0f0f0; }
+  .inv-btn:hover { background:#ddd; }
+  .autofill-note { font-size:10px; color:#aaa; font-style:italic; margin-top:2px; }
+  .btn-print { background:#1a1a2e; color:#f0c060; border:none; padding:13px 30px; font-size:14px; font-weight:bold; cursor:pointer; border-radius:6px; }
+  .btn-print:hover { background:#2d2d5e; }
+  #preview-wrapper { max-width:940px; margin:0 auto 40px auto; padding:0 12px; }
+  .preview-label { background:#ddd; color:#555; font-size:10px; text-align:center; padding:5px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; }
+  #sli-document { background:white; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.12); border-radius:0 0 4px 4px; }
+  /* Value calculator */
+  .calc-price-box { padding:8px 10px; border:1px solid #e5cc88; border-radius:5px; background:#fff8e8; font-size:13px; color:#444; min-height:36px; }
+  .calc-result-box { padding:10px 12px; border:2px solid #f0c060; border-radius:5px; background:#fff3cc; font-size:18px; font-weight:bold; color:#1a1a2e; min-height:44px; }
+  .btn-apply { width:100%; padding:11px 14px; background:#1a1a2e; color:#f0c060; border:none; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; }
+  .btn-apply:hover { background:#2d2d5e; }
+  .calc-status { font-size:11px; margin-bottom:12px; padding:6px 10px; border-radius:4px; background:#f5f5f5; }
+}
+
+@media print {
+  #topbar, #form-panel, .preview-label { display:none !important; }
+  body { margin:0; padding:0; background:white; }
+  #preview-wrapper { max-width:100%; margin:0; padding:0; }
+  #sli-document { padding:2mm; box-shadow:none; border-radius:0; }
+  @page { size:A4 portrait; margin:6mm; }
+  a, a:link, a:visited { color:#000 !important; text-decoration:none !important; }
+}
+
+/* ══ SLI DOCUMENT STYLES ══════════════════════════════════════ */
+#sli-document { font-family:Arial,sans-serif; font-size:9pt; color:#000; line-height:1.4; }
+
+/* Header — rendered via table in sliHeader() for print reliability */
+
+/* Main table */
+.doc-tbl { width:100%; border-collapse:collapse; border:2px solid #000; }
+.doc-tbl td { border:1px solid #000; padding:6px 8px; vertical-align:top; font-size:9pt; line-height:1.4; }
+
+/* Column proportions */
+.col-l { width:60%; }
+.col-r { width:40%; padding:0 !important; }
+
+/* Main content row height */
+.main-cell { height:105mm; vertical-align:top; }
+.divider { border:none; border-top:1px solid #000; margin:5px 0; }
+
+/* Right column nested table */
+.r-inner { width:100%; height:100%; border-collapse:collapse; }
+.r-inner td { border:0; padding:6px 8px; vertical-align:top; font-size:9pt; line-height:1.4; }
+.r-inner .sep-b { border-bottom:1px solid #000 !important; }
+.r-inner .sep-r { border-right:1px solid #000 !important; }
+
+/* Quantity row */
+.qty-outer { padding:0 !important; }
+.qty-inner { width:100%; border-collapse:collapse; }
+.qty-inner td { padding:5px 7px; vertical-align:top; font-size:9pt; border-top:0; border-bottom:0; border-left:0; border-right:1px solid #000; }
+.qty-inner td:last-child { border-right:0; }
+.qty-hdr { font-weight:bold; font-size:7.5pt; padding-bottom:3px; margin-bottom:4px; border-bottom:1px solid #999; }
+.qty-val { font-size:9pt; }
+
+/* Labels */
+.field-lbl { font-weight:bold; font-size:8pt; }
+.u { text-decoration:underline; }
+.known-cargo { font-size:8pt; line-height:1.5; text-align:center; padding:7px 8px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div><h1>SA Bullion — SLI Generator</h1><p>Select route → fill goods → Generate &amp; Print → Save as PDF</p></div>
+  <div style="font-size:11px;color:#aaa;text-align:right">Next invoice: <strong id="top-inv" style="color:#f0c060">GLD10153</strong></div>
+</div>
+
+<div id="form-panel">
+
+  <!-- ── Route & Invoice ── -->
+  <div class="card">
+    <h2>Route &amp; Invoice</h2>
+    <div class="fg fg1" style="margin-bottom:11px">
+      <div>
+        <label>Shipment Route — select to auto-fill all fields</label>
+        <select class="route-select input-manual" id="f-route" onchange="onRouteChange()">
+          <option value="">— Select a route —</option>
+          <option value="cpt-to-bfv">Cape Town (Brickfield) → Brinks BFV</option>
+          <option value="bfv-to-cpt">Brinks BFV → Cape Town (Brickfield)</option>
+          <option value="brinks-to-vp">Brinks BFV → SA Bullion Vault Privé</option>
+          <option value="sez-to-bfv">Brinks SEZ → Brinks BFV</option>
+          <option value="bfv-to-sez">Brinks BFV → Brinks SEZ</option>
+          <option value="sa-mint-to-bfv">SA Mint → Brinks BFV</option>
+          <option value="bfv-to-scoin">Brinks BFV → SCOIN Sandown</option>
+          <option value="cpt-to-scoin">Cape Town → SCOIN Sandown</option>
+          <option value="rrl-to-bfv">Rand Refinery → Brinks BFV</option>
+          <option value="metcon-to-sez">Metcon → Brinks SEZ</option>
+          <option value="metcon-to-bfv">Metcon → Brinks BFV</option>
+          <option value="perth-mint-to-bfv">Perth Mint → Brinks BFV</option>
+          <option value="ferrari-to-bfv">Ferrari → Brinks BFV</option>
+          <option value="reserve-to-bfv">Reserve Holdings → Brinks BFV</option>
+          <option value="bfv-to-metcon">Brinks BFV → Metcon</option>
+          <option value="bfv-mgmt-to-sabis">BFV Management Account → SABIS Account</option>
+          <option value="sez-mgmt-to-sabis">SEZ Management Account → SABIS Account</option>
+          <option value="storage-movement">Storage Movement — 12 months</option>
+          <option value="custom">Custom / Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg fg3">
+      <div>
+        <label>Invoice Number</label>
+        <div class="invoice-badge" id="invoice-display">GLD10153</div>
+        <div class="inv-btns">
+          <button class="inv-btn" onclick="decrementInvoice()">← Back</button>
+          <button class="inv-btn" onclick="incrementInvoice()">Skip →</button>
+        </div>
+      </div>
+      <div>
+        <label>SLI Date</label>
+        <input type="date" id="f-date" oninput="render()" />
+      </div>
+      <div>
+        <label>Time</label>
+        <input type="time" id="f-time" oninput="render()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Live Value Calculator (form only — hidden in print via #form-panel) ── -->
+  <div class="card card-calc">
+    <h2>Live Value Calculator <span style="font-weight:normal;font-size:10px;letter-spacing:0;text-transform:none">— this card does NOT appear on the printed SLI</span></h2>
+    <div id="calc-status" class="calc-status">Fetching live spot prices...</div>
+    <div class="fg fg3" style="margin-bottom:8px">
+      <div>
+        <label>Gold spot ZAR/oz <span style="font-weight:normal;text-transform:none;letter-spacing:0">(live — or type manually)</span></label>
+        <input type="text" id="calc-gold-spot" placeholder="e.g. 59000" oninput="calcValue()">
+      </div>
+      <div>
+        <label>Silver spot ZAR/oz <span style="font-weight:normal;text-transform:none;letter-spacing:0">(live — or type manually)</span></label>
+        <input type="text" id="calc-silver-spot" placeholder="e.g. 1100" oninput="calcValue()">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <button class="btn-apply" onclick="fetchPrices()" style="padding:8px 12px;font-size:12px">↻ Refresh Live Prices</button>
+      </div>
+    </div>
+    <div class="fg fg4">
+      <div>
+        <label>Gold ZAR/oz <span style="font-weight:normal;text-transform:none;letter-spacing:0">(+4.5% repl. cost)</span></label>
+        <div id="calc-gold-price" class="calc-price-box">—</div>
+      </div>
+      <div>
+        <label>Silver ZAR/oz <span style="font-weight:normal;text-transform:none;letter-spacing:0">(+8% repl. cost)</span></label>
+        <div id="calc-silver-price" class="calc-price-box">—</div>
+      </div>
+      <div>
+        <label>Gold (troy oz) — this shipment</label>
+        <input type="text" id="calc-gold-oz" placeholder="0" oninput="calcValue()">
+        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">— or coin weight in grams (÷33.93) —</div>
+        <input type="text" id="calc-gold-g" placeholder="e.g. 339.3g = 10 coins" oninput="calcValue()" style="font-size:12px">
+        <div style="font-size:9px;color:#aaa;margin-top:2px">22ct coins: 33.93g per coin = 1 troy oz</div>
+      </div>
+      <div>
+        <label>Silver (troy oz) — this shipment</label>
+        <input type="text" id="calc-silver-oz" placeholder="0" oninput="calcValue()">
+        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">— or pure silver grams (÷31.1035) —</div>
+        <input type="text" id="calc-silver-g" placeholder="e.g. 311.0g pure silver" oninput="calcValue()" style="font-size:12px">
+      </div>
+    </div>
+    <div class="fg fg2" style="align-items:end;margin-bottom:0">
+      <div>
+        <label>Total Replacement Value (ZAR)</label>
+        <div id="calc-result" class="calc-result-box">—</div>
+      </div>
+      <div>
+        <button class="btn-apply" onclick="applyCalcValue()">→ Apply to Declared Value field below</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Goods & Value ── -->
+  <div class="card">
+    <h2>Goods &amp; Value</h2>
+    <div class="fg fg2">
+      <div>
+        <label>Declared Value</label>
+        <input type="text" id="f-value" class="input-manual" placeholder="e.g. R 1,234,567.00  or  USD 100,000.00" oninput="render()" />
+      </div>
+      <div>
+        <label>Description of Goods / Quantity (troz)</label>
+        <textarea id="f-goods" class="input-manual" placeholder="e.g. 270 x 1oz Gold Krugerrand" list="products-list" style="min-height:80px" oninput="autoExpand(this);render()"></textarea>
+        <datalist id="products-list"></datalist>
+        <div class="autofill-note">Tip: start typing a coin name for suggestions</div>
+      </div>
+    </div>
+    <div class="fg fg4">
+      <div>
+        <label>Gross Weight (kg)</label>
+        <input type="text" id="f-weight" class="input-manual" placeholder="e.g. 10" oninput="render()" />
+      </div>
+      <div>
+        <label>Number of Pieces</label>
+        <input type="text" id="f-pieces" placeholder="e.g. 1" oninput="render()" />
+      </div>
+      <div>
+        <label>Marks / Numbers / Seals</label>
+        <input type="text" id="f-marks" placeholder="e.g. R1812455 / N/A" oninput="render()" />
+      </div>
+      <div></div>
+    </div>
+    <div class="fg fg1">
+      <div>
+        <label>Sealed Packages Said to Contain</label>
+        <textarea id="f-sealed" placeholder="Leave blank to copy from Description above" oninput="render()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Collection Details ── -->
+  <div class="card">
+    <h2>Collection Details <span style="color:#aaa;font-weight:normal;font-size:11px">(auto-filled — edit if needed)</span></h2>
+    <div class="fg fg2">
+      <div>
+        <label>Collection Location Name</label>
+        <input type="text" id="f-coll-name" oninput="render()" />
+      </div>
+      <div>
+        <label>Collection Address</label>
+        <textarea id="f-coll-addr" oninput="render()"></textarea>
+      </div>
+    </div>
+    <div class="fg fg3">
+      <div>
+        <label>Collection Date</label>
+        <input type="date" id="f-coll-date" class="input-manual" oninput="render()" />
+      </div>
+      <div>
+        <label>Collection Time</label>
+        <input type="time" id="f-coll-time" class="input-manual" oninput="render()" />
+      </div>
+      <div>
+        <label>Collection Contact</label>
+        <input type="text" id="f-coll-contact" list="contacts-list" placeholder="Name — Phone" oninput="render()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Delivery Details ── -->
+  <div class="card">
+    <h2>Delivery Details <span style="color:#aaa;font-weight:normal;font-size:11px">(auto-filled — edit if needed)</span></h2>
+    <div class="fg fg2">
+      <div>
+        <label>Delivery Location Name</label>
+        <input type="text" id="f-deliv-name" oninput="render()" />
+      </div>
+      <div>
+        <label>Delivery Address</label>
+        <textarea id="f-deliv-addr" oninput="render()"></textarea>
+      </div>
+    </div>
+    <div class="fg fg3">
+      <div>
+        <label>Delivery Date</label>
+        <input type="date" id="f-deliv-date" class="input-manual" oninput="render()" />
+      </div>
+      <div>
+        <label>Delivery Time <span style="color:#aaa;font-weight:normal">(leave blank to omit)</span></label>
+        <input type="time" id="f-deliv-time" class="input-manual" oninput="render()" />
+      </div>
+      <div>
+        <label>Delivery Contact</label>
+        <input type="text" id="f-deliv-contact" list="contacts-list" placeholder="Name — Phone" oninput="render()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Shipment Options ── -->
+  <div class="card">
+    <h2>Shipment Options <span style="color:#aaa;font-weight:normal;font-size:11px">(auto-filled — edit if needed)</span></h2>
+    <div class="fg fg3">
+      <div>
+        <label>Responsible Person</label>
+        <select id="f-responsible" onchange="render()">
+          <option value="">— Select —</option>
+          <option value="Abdullah Aragoneses">Abdullah Aragoneses</option>
+          <option value="Angelique Render">Angelique Render</option>
+        </select>
+      </div>
+      <div>
+        <label>Payment — Brinks Charges</label>
+        <select id="f-brinks-charge" onchange="render()">
+          <option value="collect">X Collect</option>
+          <option value="prepaid">X Prepaid</option>
+        </select>
+      </div>
+      <div>
+        <label>Payment — User / Customs</label>
+        <select id="f-user-charge" onchange="render()">
+          <option value="collect">X Collect</option>
+          <option value="prepaid">Prepaid (n/a)</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg fg1">
+      <div>
+        <label>Consignee</label>
+        <textarea id="f-consignee" style="min-height:36px" oninput="render()"></textarea>
+      </div>
+    </div>
+    <div class="fg fg1">
+      <div>
+        <label>Special Handling / Notify Party <span style="color:#aaa;font-weight:normal">(optional)</span></label>
+        <input type="text" id="f-special" placeholder="Leave blank if none" oninput="render()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Print Button ── -->
+  <div class="card" style="text-align:center;padding:22px">
+    <button class="btn-print" onclick="printSLI()">🖨&nbsp; Generate &amp; Print to PDF</button>
+    <p style="margin:10px 0 0 0;font-size:11px;color:#888">Browser print dialog → Destination: <strong>Save as PDF</strong> → Click Print</p>
+  </div>
+
+</div>
+
+<datalist id="contacts-list"></datalist>
+<datalist id="contacts-name-list"></datalist>
+
+<div id="preview-wrapper">
+  <div class="preview-label">Live Preview — Ctrl+P to Print / Save as PDF</div>
+  <div id="sli-document"></div>
+</div>
+
+<script>
+/* ══ ROUTE DATA ════════════════════════════════════════════════════════════ */
+var ROUTES = {
+  'brinks-to-vp':{
+    label:'Brinks BFV → SA Bullion Vault Privé',
+    coll:{ name:'Brinks Global Services', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    deliv:{ name:'SA Bullion Vault Privé', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    consignee:'SA BULLION INVESTOR SERVICES\nBRINKS ACCOUNT NUMBER: 57403',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Angelique Render', collContact:'', delivContact:'Angelique Render — 064 385 1447'
+  },
+  'cpt-to-bfv':{
+    label:'Cape Town (Brickfield) → Brinks BFV',
+    coll:{ name:'SA Bullion Cape Town', addr:'First Floor, Brickfield Canvas\n35 Brickfield Road\nWoodstock, Cape Town, 7925' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Abdullah — 060 587 3305', delivContact:'Sophy — 082 897 7591'
+  },
+  'rrl-to-bfv':{
+    label:'Rand Refinery → Brinks BFV',
+    coll:{ name:'Rand Refinery', addr:'1 Refinery Rd\nEast Rand Pty Mines\nGermiston, 1400' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'sez-to-bfv':{
+    label:'Brinks SEZ → Brinks BFV',
+    coll:{ name:'Brinks SEZ', addr:'Bonaero Park, Kempton Park\nOR Tambo International Airport SEZ' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'metcon-to-sez':{
+    label:'Metcon → Brinks SEZ',
+    coll:{ name:'Metcon', addr:'ACSA Precinct, Precinct 1\nBonaero Drive 38, Kempton Park' },
+    deliv:{ name:'Brinks SEZ', addr:'Bonaero Park, Kempton Park\nOR Tambo International Airport SEZ' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:''
+  },
+  'metcon-to-bfv':{
+    label:'Metcon → Brinks BFV',
+    coll:{ name:'Metcon', addr:'ACSA Precinct, Precinct 1\nBonaero Drive 38, Kempton Park' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'sa-mint-to-bfv':{
+    label:'SA Mint → Brinks BFV',
+    coll:{ name:'The South African Mint', addr:'Old Johannesburg Rd, Gateway\nCenturion, 1683' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Mokoena — 012 677 2435', delivContact:'Sophy — 082 897 7591'
+  },
+  'perth-mint-to-bfv':{
+    label:'Perth Mint → Brinks BFV',
+    coll:{ name:'The Perth Mint', addr:'310 Hay Street, East Perth\nWA 6004, Australia' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Gloria — 082 808 4863', delivContact:'Sophy — 082 897 7591'
+  },
+  'reserve-to-bfv':{
+    label:'Reserve Holdings → Brinks BFV',
+    coll:{ name:'Reserve Holdings', addr:'1 Dover House\nOrange Street, Cape Town, 8001' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'ferrari-to-bfv':{
+    label:'Ferrari → Brinks BFV',
+    coll:{ name:'Ferrari (The Paragon)', addr:'The Paragon, 1 Kramer Rd\nBedfordview, Germiston, 2008' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Gloria — 082 808 4863', delivContact:'Sophy — 082 897 7591'
+  },
+  'bfv-to-cpt':{
+    label:'Brinks BFV → Cape Town (Brickfield)',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'SA Bullion Cape Town', addr:'First Floor, Brickfield Canvas\n35 Brickfield Road\nWoodstock, Cape Town, 7925' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:'Abdullah — 060 587 3305'
+  },
+  'bfv-to-scoin':{
+    label:'Brinks BFV → SCOIN Sandown',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'SCOIN', addr:'South African Gold Coin Exchange\n129 Rivonia Rd, The Marc Tower 2\nFloor 12, Sandown' },
+    consignee:'South African Gold Coin Exchange',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:'Daniela — 073 382 9932'
+  },
+  'cpt-to-scoin':{
+    label:'Cape Town → SCOIN Sandown',
+    coll:{ name:'SA Bullion Cape Town', addr:'First Floor, Brickfield Canvas\n35 Brickfield Road\nWoodstock, Cape Town, 7925' },
+    deliv:{ name:'SCOIN', addr:'South African Gold Coin Exchange\n129 Rivonia Rd, The Marc Tower 2\nFloor 12, Sandown' },
+    consignee:'South African Gold Coin Exchange',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Abdullah — 060 587 3305', delivContact:'Daniela — 073 382 9932'
+  },
+  'bfv-to-sez':{
+    label:'Brinks BFV → Brinks SEZ',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'Brinks SEZ', addr:'Bonaero Park, Kempton Park\nOR Tambo International Airport SEZ' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:''
+  },
+  'bfv-to-metcon':{
+    label:'Brinks BFV → Metcon',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'Metcon', addr:'ACSA Precinct, Precinct 1\nBonaero Drive 38, Kempton Park' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:''
+  },
+  'bfv-mgmt-to-sabis':{
+    label:'BFV Management Account → SABIS Account',
+    coll:{ name:'Brinks Management Account (BFV)', addr:'Brinks Global Services\nManagement Account 59646\nParagon Building 1, Bedfordview, Germiston' },
+    deliv:{ name:'Brinks BFV — SABIS Account 57403', addr:'Brinks Global Services\nSA Bullion Investor Services Account 57403\nParagon Building 1, Bedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES\nBRINKS ACCOUNT NUMBER: 57403',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'sez-mgmt-to-sabis':{
+    label:'SEZ Management Account → SABIS Account',
+    coll:{ name:'Brinks Management Account (SEZ)', addr:'Brinks SEZ\nManagement Account\nBonaero Park, Kempton Park\nOR Tambo International Airport SEZ' },
+    deliv:{ name:'Brinks BFV — SABIS Account 57403', addr:'Brinks Global Services\nSA Bullion Investor Services Account 57403\nParagon Building 1, Bedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES\nBRINKS ACCOUNT NUMBER: 57403',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:''
+  },
+  'storage-movement':{
+    label:'Storage Movement — 12 months',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'SA BULLION INVESTOR SERVICES',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:'',
+    special:'Securing 12 months storage movement'
+  },
+  'custom':{
+    label:'Custom / Other',
+    coll:{ name:'', addr:'' }, deliv:{ name:'', addr:'' },
+    consignee:'',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'', delivContact:''
+  }
+};
+
+var CONTACTS = [
+  { name:'Angelique Render',    phone:'064 385 1447', loc:'Brinks Bedfordview' },
+  { name:'Sophy Mashilo',       phone:'082 897 7591', loc:'Brinks Bedfordview' },
+  { name:'Gloria',              phone:'082 808 4863', loc:'Cape Town / Ferrari' },
+  { name:'Abdullah Aragoneses', phone:'060 587 3305', loc:'Cape Town / Responsible' },
+  { name:'Daniela',             phone:'073 382 9932', loc:'SCOIN Sandown' },
+  { name:'Lauren Berrington',   phone:'',             loc:'SCOIN Sandown' },
+  { name:'Mokoena',             phone:'012 677 2435', loc:'SA Mint, Centurion' },
+  { name:"Imran O'Brien",       phone:'',             loc:'Brinks' },
+];
+
+var PRODUCTS = [
+  '20000 x 1oz Silver Philharmonic (40 x Monster Boxes)',
+  '15000 x 1oz Silver Krugerrand (30 x Monster Boxes)',
+  '12000 x 1oz Silver Britannia (24 x Monster Boxes)',
+  '4000 x 1oz Silver Krugerrand (8 x Monster Boxes)',
+  '3000 x 1oz Silver Krugerrand (6 x Monster Boxes)',
+  '2500 x 1oz Silver Britannia (5 x Monster Boxes)',
+  '450 x 1kg Silver Cast Bars',
+  '350 x 1kg SABIS Silver Bars',
+  '300 x 1oz Australian Koala 2025',
+  '250 x 1oz Australian Kangaroo 2026',
+  '270 x 1oz Gold Krugerrand',
+  '947 x 1oz Gold Krugerrand',
+  '250 x 1oz Gold Krugerrand, 21 x 1oz MC Platinum Bars, 13 x 1kg MC Silver Cast Bars',
+  '3500 x 1oz Britannia (7 x MB), 3800 x 1/4oz Britannia (10 x MB), 5120 x 1/10oz Britannia (16 x MB)',
+  '26 x 1oz Proof Krugerrand, 8 x 1/2oz Proof GK, 6 x 1/4oz Proof GK, 4 x 1/10oz Proof GK',
+  '50 x 1oz Lunar Series III Horse Silver Bullion Coin 2026 (Year of The Horse)',
+  '490 x Orlando Pirates Coins',
+  '3 x GOLD G24 1oz CHEETAH AFRICAN RANGE PC HR 26',
+  '1 x GOLD KRUGERRAND G22 2oz PIEDFORT PC 2026',
+];
+
+/* ══ STATE ═════════════════════════════════════════════════════════════════ */
+var invoiceNum = parseInt(localStorage.getItem('sli_inv') || '10153');
+
+/* ══ INIT ══════════════════════════════════════════════════════════════════ */
+window.onload = function() {
+  var cl  = document.getElementById('contacts-list');
+  var cnl = document.getElementById('contacts-name-list');
+  var pl  = document.getElementById('products-list');
+
+  CONTACTS.forEach(function(c) {
+    var o1 = document.createElement('option');
+    o1.value = c.name + (c.phone ? ' — ' + c.phone : '');
+    cl.appendChild(o1);
+    var o2 = document.createElement('option');
+    o2.value = c.name;
+    cnl.appendChild(o2);
+  });
+  PRODUCTS.forEach(function(p) {
+    var o = document.createElement('option'); o.value = p; pl.appendChild(o);
+  });
+
+  var restored = restoreFormState();
+
+  if (!restored) {
+    /* First ever load — apply factory defaults */
+    var t  = new Date();
+    var d  = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
+    var ti = pad(t.getHours()) + ':' + pad(t.getMinutes());
+    ['f-date', 'f-deliv-date', 'f-coll-date'].forEach(function(id) {
+      document.getElementById(id).value = d;
+    });
+    document.getElementById('f-time').value = ti;
+    document.getElementById('f-coll-time').value = ti;
+    set('f-sealed', 'Precious Metals');
+    set('f-marks',  'N/A');
+    set('f-pieces', 'N/A');
+  }
+
+  /* Always expand the goods textarea to fit restored content */
+  var goodsEl = document.getElementById('f-goods');
+  if (goodsEl) autoExpand(goodsEl);
+
+  updateInvoiceDisplay();
+  fetchPrices();
+  render();
+};
+
+function autoExpand(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+/* ══ FORM STATE PERSISTENCE ════════════════════════════════════════════════ */
+var FORM_FIELDS = [
+  'f-route','f-date','f-time','f-value','f-goods','f-weight','f-pieces',
+  'f-marks','f-sealed','f-coll-name','f-coll-addr','f-coll-date','f-coll-time',
+  'f-coll-contact','f-deliv-name','f-deliv-addr','f-deliv-contact','f-deliv-date',
+  'f-deliv-time','f-responsible','f-brinks-charge','f-user-charge','f-consignee','f-special'
+];
+
+function saveFormState() {
+  var state = {};
+  FORM_FIELDS.forEach(function(id) {
+    var e = document.getElementById(id);
+    if (e) state[id] = e.value;
+  });
+  localStorage.setItem('sli_form', JSON.stringify(state));
+}
+
+function restoreFormState() {
+  var raw = localStorage.getItem('sli_form');
+  if (!raw) return false;
+  try {
+    var state = JSON.parse(raw);
+    FORM_FIELDS.forEach(function(id) {
+      if (state[id] !== undefined) {
+        var e = document.getElementById(id);
+        if (e) e.value = state[id];
+      }
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+/* ══ ROUTE CHANGE ══════════════════════════════════════════════════════════ */
+function onRouteChange() {
+  var key = document.getElementById('f-route').value;
+  var r   = ROUTES[key];
+  if (!r) return;
+  set('f-coll-name',    r.coll.name);
+  set('f-coll-addr',    r.coll.addr);
+  set('f-coll-contact', r.collContact);
+  set('f-deliv-name',   r.deliv.name);
+  set('f-deliv-addr',   r.deliv.addr);
+  set('f-deliv-contact',r.delivContact);
+  set('f-consignee',    r.consignee);
+  set('f-responsible',  r.responsible);
+  set('f-brinks-charge',r.brinksChg);
+  set('f-user-charge',  r.userChg);
+  set('f-special',      r.special || '');
+  render();
+}
+
+function set(id, v) {
+  var e = document.getElementById(id);
+  if (e) e.value = v || '';
+}
+
+/* ══ INVOICE ═══════════════════════════════════════════════════════════════ */
+function updateInvoiceDisplay() {
+  var inv = 'GLD' + invoiceNum;
+  document.getElementById('invoice-display').textContent = inv;
+  document.getElementById('top-inv').textContent = inv;
+}
+function incrementInvoice() {
+  invoiceNum++;
+  localStorage.setItem('sli_inv', invoiceNum);
+  updateInvoiceDisplay();
+  render();
+}
+function decrementInvoice() {
+  if (invoiceNum > 10100) {
+    invoiceNum--;
+    localStorage.setItem('sli_inv', invoiceNum);
+    updateInvoiceDisplay();
+    render();
+  }
+}
+
+/* ══ HELPERS ═══════════════════════════════════════════════════════════════ */
+function fmtDate(v) {
+  if (!v) return '__/__/____';
+  var p = v.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+function fmtTime(v) { return v || '__:__'; }
+function br(s) { return (s || '').replace(/\n/g, '<br>'); }
+function get(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+function fmtNum(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+function fmtValue(v) {
+  if (!v) return '______________';
+  v = v.trim();
+  if (/^[RUGB$£€]/.test(v)) return v.replace(/^([RUGB$£€]+)\s+/, '$1&nbsp;');
+  return 'R&nbsp;' + v;
+}
+
+/* ══ LIVE VALUE CALCULATOR ═════════════════════════════════════════════════ */
+/*
+ * Uses cdn.jsdelivr.net/@fawazahmed0/currency-api — CDN-hosted, no API key,
+ * CORS works from local file:// — XAU = gold per troy oz, XAG = silver per troy oz.
+ * If fetch fails user can type spot prices manually in the input fields.
+ */
+function fetchPrices() {
+  var statusEl = document.getElementById('calc-status');
+  statusEl.textContent = 'Fetching live spot prices...';
+  statusEl.style.color = '#888';
+
+  var BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/';
+
+  Promise.all([
+    fetch(BASE + 'xau.json').then(function(r) { return r.json(); }),
+    fetch(BASE + 'xag.json').then(function(r) { return r.json(); })
+  ]).then(function(res) {
+    var goldZAR   = res[0].xau.zar;   /* ZAR per troy oz — raw spot */
+    var silverZAR = res[1].xag.zar;
+
+    /* Populate editable spot fields so user can verify or override */
+    document.getElementById('calc-gold-spot').value   = goldZAR.toFixed(2);
+    document.getElementById('calc-silver-spot').value = silverZAR.toFixed(2);
+
+    statusEl.textContent =
+      'Live prices loaded — Gold spot: R' + fmtNum(goldZAR) +
+      '/oz · Silver spot: R' + fmtNum(silverZAR) + '/oz (replacement markup applied below)';
+    statusEl.style.color = '#2a7a2a';
+    calcValue();
+  }).catch(function() {
+    statusEl.textContent =
+      'Auto-fetch failed — type the gold and silver ZAR spot prices above manually, then enter the oz amounts below.';
+    statusEl.style.color = '#cc4400';
+  });
+}
+
+function calcValue() {
+  /* Read from editable spot fields so manual override always works */
+  var goldSpot   = parseFloat(document.getElementById('calc-gold-spot').value)   || 0;
+  var silverSpot = parseFloat(document.getElementById('calc-silver-spot').value) || 0;
+
+  /* Apply replacement cost markup */
+  var goldZAR   = goldSpot   * 1.045;
+  var silverZAR = silverSpot * 1.08;
+
+  document.getElementById('calc-gold-price').textContent   = goldZAR   > 0 ? 'R ' + fmtNum(goldZAR)   : '—';
+  document.getElementById('calc-silver-price').textContent = silverZAR > 0 ? 'R ' + fmtNum(silverZAR) : '—';
+
+  var goldOz   = parseFloat(document.getElementById('calc-gold-oz').value)   || 0;
+  var goldG    = parseFloat(document.getElementById('calc-gold-g').value)    || 0;
+  if (goldG > 0 && goldOz === 0) goldOz = goldG / 33.93;
+
+  var silverOz = parseFloat(document.getElementById('calc-silver-oz').value) || 0;
+  var silverG  = parseFloat(document.getElementById('calc-silver-g').value)  || 0;
+  if (silverG > 0 && silverOz === 0) silverOz = silverG / 31.1035;
+
+  var total = (goldOz * goldZAR) + (silverOz * silverZAR);
+
+  document.getElementById('calc-result').textContent = total > 0 ? 'R ' + fmtNum(total) : '—';
+}
+
+function applyCalcValue() {
+  var goldSpot   = parseFloat(document.getElementById('calc-gold-spot').value)   || 0;
+  var silverSpot = parseFloat(document.getElementById('calc-silver-spot').value) || 0;
+  var goldOz     = parseFloat(document.getElementById('calc-gold-oz').value)     || 0;
+  var silverOz   = parseFloat(document.getElementById('calc-silver-oz').value)   || 0;
+  var total = (goldOz * goldSpot * 1.045) + (silverOz * silverSpot * 1.08);
+  if (total > 0) {
+    document.getElementById('f-value').value = 'R ' + fmtNum(total);
+    render();
+  }
+}
+
+/* ══ SLI DOCUMENT PARTS ════════════════════════════════════════════════════ */
+var LOGO_W = './logos/image2.png';
+var LOGO_C = './logos/image1.png';
+
+function sliHeader() {
+  var addrStyle = 'font-size:9pt;line-height:1.7;color:#000;-webkit-text-fill-color:#000';
+  return '<table style="width:100%;border-collapse:collapse;margin-bottom:6px"><tr>' +
+
+    /* col 1 — BRINKS wordmark, fixed 68mm */
+    '<td style="width:68mm;vertical-align:middle;padding:0 8px 0 0">' +
+      '<img src="' + LOGO_W + '" alt="BRINKS" style="width:68mm;height:auto;display:block">' +
+      '<div style="font-size:7.5pt;color:#555;margin-top:5px">A Subsidiary of the Brinks Company</div>' +
+    '</td>' +
+
+    /* col 2 — title, stretches to fill gap, bottom-aligned */
+    '<td style="vertical-align:bottom;text-align:center;padding:0 4px 4px 4px">' +
+      '<strong style="font-size:13pt;text-decoration:underline;line-height:1.5;display:block">Shipper\'s<br>Letter of Instruction</strong>' +
+    '</td>' +
+
+    /* col 3 — B crest, fixed 22mm */
+    '<td style="width:22mm;vertical-align:top;padding:0 6px 0 0">' +
+      '<img src="' + LOGO_C + '" alt="B" style="width:22mm;height:auto;display:block">' +
+    '</td>' +
+
+    /* col 4 — address text, fixed 50mm */
+    '<td style="width:50mm;vertical-align:top;padding:0;' + addrStyle + '">' +
+      'Brink\'s (SA) PTY LTD<br>' +
+      '316 B SA Jewellery Centre<br>' +
+      '225 Main Street<br>' +
+      'Johannesburg<br>' +
+      'South Africa<br>' +
+      'TEL: +27 (0)11 334 1793<br>' +
+      'FAX: +27 (0)11 334 1794' +
+    '</td>' +
+
+  '</tr></table>';
+}
+
+function shipperRow(date, time, inv) {
+  return '<tr>' +
+    '<td class="col-l"><span class="field-lbl">Shipper</span><br><strong>SA BULLION INVESTOR SERVICES<br>BRINKS ACCOUNT NUMBER: 57403</strong></td>' +
+    '<td class="col-r" style="padding:6px 8px !important">' +
+      'Date&nbsp;:&nbsp;<strong>' + date + '</strong>&nbsp;&nbsp;&nbsp;&nbsp;Time&nbsp;:&nbsp;<strong>' + time + '</strong>' +
+      '<hr style="border:none;border-top:1px solid #ccc;margin:5px 0">' +
+      'Shipper\'s Reference&nbsp;:' +
+      '<div style="border-bottom:1px solid #999;margin:4px 0 5px 0;width:100%"></div>' +
+      '<strong>INVOICE NO: ' + inv + '</strong>' +
+    '</td>' +
+  '</tr>';
+}
+
+function getSigHtml(responsible) {
+  var n = (responsible || '').toLowerCase();
+  if (n.indexOf('abdullah') >= 0) {
+    return '<img src="./logos/sig_abdullah.png" style="height:70px;max-width:220px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
+  }
+  if (n.indexOf('angelique') >= 0 || n.indexOf('angie') >= 0) {
+    return '<img src="./logos/sig_angie.png" style="height:70px;max-width:220px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
+  }
+  return '';
+}
+
+
+
+function serviceTypeBlock(value, brinksChg, userChg) {
+  var bCollect = brinksChg === 'collect';
+  var uCollect = userChg   === 'collect';
+  return '<tr>' +
+    '<td class="sep-r sep-b" style="width:58%;font-size:9pt">' +
+      '<strong>Brink\'s service type</strong><br>' +
+      '<strong>X</strong>&nbsp;Door to door<br>' +
+      '&#9744;&nbsp;Door to airport<br>' +
+      '<span style="font-size:7.5pt">&nbsp;&nbsp;(secured delivery at aircraft side or airport vault)</span><br>' +
+      '&#9744;&nbsp;Aircraft side to door<br>' +
+      '&#9744;&nbsp;Personal transport<br>' +
+      '<span style="font-size:7.5pt">Brink\'s reserves the right to limit the service-types for selected destinations</span><br>' +
+      '&#9744;&nbsp;Other, specify:<br>' +
+      '<span style="font-size:7.5pt">Brink\'s Global Services Conditions of Contract do not apply</span>' +
+    '</td>' +
+    '<td class="sep-b" style="font-size:9pt">' +
+      'Declared Value (ZAR) for Customs<br>' +
+      '<strong>Brink\'s liability</strong><br><br>' +
+      'Value:&nbsp;<strong>' + value + '</strong><br><br>' +
+      '<hr style="border:none;border-top:1px solid #999;margin:4px 0">' +
+      'Payment<br>' +
+      'Brinks charges<br>' +
+      (bCollect ? '<strong>X</strong>' : '&#9744;') + '&nbsp;Collect<br>' +
+      (bCollect ? '&#9744;' : '<strong>X</strong>') + '&nbsp;Prepaid<br>' +
+      'User / Customs charges<br>' +
+      (uCollect ? '<strong>X</strong>' : '&#9744;') + '&nbsp;Prepaid<br>' +
+      (uCollect ? 'n/a' : '<strong>X</strong>&nbsp;Collect') +
+    '</td>' +
+  '</tr>';
+}
+
+function knownCargoText() {
+  return '<tr><td colspan="2" class="known-cargo">' +
+    'I, the undersigned, on behalf of the named company, certify that to the best of my knowledge, the consignment to which this document refers, ' +
+    'had been prepared in accordance with the requirements of the national security programme governing known customer procedures and can be ' +
+    'considered „KNOWN CARGO“. I understand that a false declaration may lead to legal action being taken.' +
+  '</td></tr>';
+}
+
+function footerBlock() {
+  return '<div style="text-align:center;font-size:8pt;line-height:1.8;margin-top:4px">' +
+    '<strong>Freight Forwarding Association General Conditions.</strong><br>' +
+    '<strong>Please send completed form to Brink\'s Southern Africa</strong><br>' +
+    '<strong>E-Mail : <a href="mailto:dj.jnb@brinksglobal.com" style="color:#000">dj.jnb@brinksglobal.com</a></strong><br>' +
+    '<strong>E-Mail: <a href="mailto:ops.jnb@brinksglobal.com" style="color:#000">ops.jnb@brinksglobal.com</a></strong>' +
+  '</div>';
+}
+
+/* ══ UNIFIED RENDER ════════════════════════════════════════════════════════ */
+function renderSLI() {
+  var date  = fmtDate(get('f-date')), time = fmtTime(get('f-time')), inv = 'GLD' + invoiceNum;
+  var value = fmtValue(get('f-value'));
+  var goodsRaw = get('f-goods') || '';
+  var goods    = br(goodsRaw);
+  var wt    = get('f-weight') || '';
+  var pcs   = get('f-pieces') || '';
+  var marks = get('f-marks') || '';
+  var sealed = br(get('f-sealed') || goodsRaw);
+  var special = get('f-special') || '';
+  var responsible = get('f-responsible') || '';
+  var collDate = fmtDate(get('f-coll-date')), collTime = fmtTime(get('f-coll-time'));
+  var collCont = get('f-coll-contact'), collAddr = br(get('f-coll-addr')), collName = get('f-coll-name');
+  var consignee = br(get('f-consignee'));
+  var delivAddr = br(get('f-deliv-addr')), delivName = get('f-deliv-name');
+  var delivCont = get('f-deliv-contact'), delivDate = fmtDate(get('f-deliv-date'));
+  var delivTimeRaw = get('f-deliv-time');
+  var brinksChg = get('f-brinks-charge'), userChg = get('f-user-charge');
+
+  var rightCol =
+    '<table class="r-inner">' +
+      '<tr><td colspan="2" class="sep-b">' +
+        'Responsible person : <strong>' + responsible + '</strong><br><br>' +
+        'Signature&nbsp;:&nbsp;' + getSigHtml(responsible) + '<br><br>' +
+        'Airport of departure&nbsp;: <strong>N/A</strong><br>' +
+        'City / Airport of arrival&nbsp;: <strong>N/A</strong>' +
+      '</td></tr>' +
+      serviceTypeBlock(value, brinksChg, userChg) +
+    '</table>';
+
+  return sliHeader() +
+  '<table class="doc-tbl">' +
+    shipperRow(date, time, inv) +
+    '<tr>' +
+      '<td class="col-l main-cell">' +
+        '<span class="field-lbl u">Collection location:</span><br>' +
+        (collName ? collName + ',<br>' : '') +
+        collAddr + '<br>' +
+        '<strong>Collection:</strong> ' + collDate + '&nbsp;&nbsp;<strong>Time:</strong> ' + collTime + 'h<br>' +
+        (collCont ? '<strong>Contact Person:</strong> ' + collCont : '') +
+        '<hr class="divider">' +
+        'Consignee<br>' +
+        '<hr class="divider">' +
+        '<strong>' + consignee + '</strong>' +
+        '<hr class="divider">' +
+        '<span class="field-lbl u">Delivery location</span><br>' +
+        (delivName ? delivName + ',<br>' : '') +
+        delivAddr + '<br>' +
+        (delivCont ? '<strong>Contact Person:</strong> ' + delivCont + '<br>' : '') +
+        (delivDate ? '<strong>Delivery:</strong> ' + delivDate + (delivTimeRaw ? '&nbsp;&nbsp;<strong>Time:</strong> ' + delivTimeRaw + 'h' : '') : '') +
+        '<hr class="divider">' +
+        'Sealed packages said to contain;<br><strong>' + sealed + '</strong>' +
+      '</td>' +
+      '<td class="col-r main-cell">' + rightCol + '</td>' +
+    '</tr>' +
+    /* Quantity row — 5 columns */
+    '<tr>' +
+      '<td colspan="2" class="qty-outer"><table class="qty-inner"><tr>' +
+        '<td style="width:30%">' +
+          '<div class="qty-hdr">Quantity ( troz, Carats etc.)</div>' +
+          '<div class="qty-val">' + goods + '</div>' +
+        '</td>' +
+        '<td style="width:12%">' +
+          '<div class="qty-hdr">Number of Pieces</div>' +
+          '<div class="qty-val">' + pcs + '</div>' +
+        '</td>' +
+        '<td style="width:20%">' +
+          '<div class="qty-hdr">Marks, Numbers, Seals</div>' +
+          '<div class="qty-val">' + marks + '</div>' +
+        '</td>' +
+        '<td style="width:18%">' +
+          '<div class="qty-hdr">Gross Weight (in kg)</div>' +
+          '<div class="qty-val">' + wt + '</div>' +
+        '</td>' +
+        '<td style="width:20%">' +
+          '<div class="qty-hdr">Dimensions:</div>' +
+          '<div class="qty-val"></div>' +
+        '</td>' +
+      '</tr></table></td>' +
+    '</tr>' +
+    /* Special handling + Enclosures */
+    '<tr>' +
+      '<td style="width:60%">' +
+        '<span class="u" style="font-size:8pt">Special handling information/Notify Party;</span><br>' +
+        (special || '&nbsp;') +
+      '</td>' +
+      '<td>' +
+        'Enclosures :<br>' +
+        '<strong>X</strong>&nbsp;Commercial invoice&nbsp;&nbsp;&#9744;&nbsp;Packing / Weighing list<br>' +
+        '&#9744;&nbsp;Proforma Invoice&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9744;&nbsp;ATA Carnet<br>' +
+        '&#9744;&nbsp;Certificate of Origin&nbsp;&nbsp;&nbsp;&#9744;&nbsp;CITES<br>' +
+        '&#9744;&nbsp;Export declaration/Licence&nbsp;&#9744;&nbsp;Beneficial Owner Decl.<br>' +
+        '&#9744;&nbsp;Import Licence' +
+      '</td>' +
+    '</tr>' +
+    knownCargoText() +
+  '</table>' +
+  footerBlock();
+}
+
+function render() {
+  document.getElementById('sli-document').innerHTML = renderSLI();
+  saveFormState();
+}
+
+/* ══ PRINT ══════════════════════════════════════════════════════════════════ */
+function printSLI() {
+  render();
+  setTimeout(function() {
+    window.print();
+    setTimeout(function() {
+      var next = invoiceNum + 1;
+      var ok = confirm(
+        'PDF saved for GLD' + invoiceNum + '?\n\n' +
+        'OK → advance to GLD' + next + '\n' +
+        'Cancel → stay on GLD' + invoiceNum
+      );
+      if (ok) {
+        invoiceNum = next;
+        localStorage.setItem('sli_inv', invoiceNum);
+        updateInvoiceDisplay();
+        render();
+      }
+    }, 800);
+  }, 250);
+}
+</script>
+</body>
+</html>
