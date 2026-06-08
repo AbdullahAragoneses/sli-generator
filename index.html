@@ -122,6 +122,7 @@
           <option value="cpt-to-bfv">Cape Town (Brickfield) → Brinks BFV</option>
           <option value="bfv-to-cpt">Brinks BFV → Cape Town (Brickfield)</option>
           <option value="brinks-to-vp">Brinks BFV → SA Bullion Vault Privé</option>
+          <option value="vp-to-bfv">SA Bullion Vault Privé → Brinks BFV</option>
           <option value="sez-to-bfv">Brinks SEZ → Brinks BFV</option>
           <option value="bfv-to-sez">Brinks BFV → Brinks SEZ</option>
           <option value="sa-mint-to-bfv">SA Mint → Brinks BFV</option>
@@ -134,10 +135,20 @@
           <option value="ferrari-to-bfv">Ferrari → Brinks BFV</option>
           <option value="reserve-to-bfv">Reserve Holdings → Brinks BFV</option>
           <option value="bfv-to-metcon">Brinks BFV → Metcon</option>
+          <option value="sabis-to-mgmt">SABIS Account → Management Account</option>
           <option value="bfv-mgmt-to-sabis">BFV Management Account → SABIS Account</option>
           <option value="sez-mgmt-to-sabis">SEZ Management Account → SABIS Account</option>
           <option value="storage-movement">Storage Movement — 12 months</option>
           <option value="custom">Custom / Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg fg2" style="margin-bottom:0">
+      <div>
+        <label>Shipper Account</label>
+        <select id="f-shipper" onchange="render()">
+          <option value="sabis">SA BULLION INVESTOR SERVICES — Brinks Account 57403</option>
+          <option value="mgmt">SA Management Account — Brinks Account 59646</option>
         </select>
       </div>
     </div>
@@ -371,13 +382,16 @@
     <div class="email-subj">Subject Line</div>
     <div class="email-subj-val" id="email-subject">—</div>
     <div class="email-subj">Email Body</div>
-    <textarea id="email-body" readonly></textarea>
+    <div id="email-body" style="width:100%;min-height:280px;font-family:Arial,sans-serif;font-size:13px;line-height:1.7;color:#222;border:1px solid #ddd;border-radius:5px;padding:14px;background:#fafffe;white-space:pre-wrap;"></div>
     <br>
     <button class="btn-copy" onclick="copyEmail()">Copy Email Body</button>
     <span class="copy-confirm" id="copy-confirm">Copied!</span>
     &nbsp;&nbsp;
     <button class="btn-copy" onclick="copySubject()" style="background:#444">Copy Subject</button>
     <span class="copy-confirm" id="copy-confirm-subj">Copied!</span>
+    &nbsp;&nbsp;
+    <button class="btn-copy" onclick="openInOutlook()" style="background:#0078d4">&#9993; Open in Outlook</button>
+    <span id="outlook-reminder" style="display:none"></span>
   </div>
 </div>
 
@@ -391,6 +405,14 @@ var ROUTES = {
     consignee:'SA BULLION INVESTOR SERVICES\nBRINKS ACCOUNT NUMBER: 57403',
     brinksChg:'collect', userChg:'prepaid',
     responsible:'Angelique Render', collContact:'', delivContact:'Angelique Render — 064 385 1447'
+  },
+  'vp-to-bfv':{
+    label:'SA Bullion Vault Privé → Brinks BFV',
+    coll:{ name:'SA Bullion Vault Privé', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    deliv:{ name:'Brinks Global Services', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    consignee:'SA BULLION INVESTOR SERVICES\nBRINKS ACCOUNT NUMBER: 57403',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Angelique Render', collContact:'Angelique Render — 064 385 1447', delivContact:'Sophy — 082 897 7591'
   },
   'cpt-to-bfv':{
     label:'Cape Town (Brickfield) → Brinks BFV',
@@ -503,6 +525,14 @@ var ROUTES = {
     consignee:'SA BULLION INVESTOR SERVICES',
     brinksChg:'prepaid', userChg:'collect',
     responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:''
+  },
+  'sabis-to-mgmt':{
+    label:'SABIS Account → Management Account',
+    coll:{ name:'SA BULLION INVESTOR SERVICES — Account 57403', addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
+    deliv:{ name:'SA Management Account — Account 59646', addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
+    consignee:'SA Management Account\nBRINKS ACCOUNT NUMBER: 59646',
+    brinksChg:'collect', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:'Sophy — 082 897 7591'
   },
   'bfv-mgmt-to-sabis':{
     label:'BFV Management Account → SABIS Account',
@@ -627,7 +657,7 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 /* ══ FORM STATE PERSISTENCE ════════════════════════════════════════════════ */
 var FORM_FIELDS = [
-  'f-route','f-date','f-time','f-value','f-goods','f-weight','f-pieces',
+  'f-route','f-shipper','f-date','f-time','f-value','f-goods','f-weight','f-pieces',
   'f-marks','f-sealed','f-coll-name','f-coll-addr','f-coll-date','f-coll-time',
   'f-coll-contact','f-deliv-name','f-deliv-addr','f-deliv-contact','f-deliv-date',
   'f-deliv-time','f-responsible','f-brinks-charge','f-user-charge','f-consignee','f-special'
@@ -722,39 +752,52 @@ function fmtValue(v) {
 
 /* ══ LIVE VALUE CALCULATOR ═════════════════════════════════════════════════ */
 /*
- * Uses cdn.jsdelivr.net/@fawazahmed0/currency-api — CDN-hosted, no API key,
- * CORS works from local file:// — XAU = gold per troy oz, XAG = silver per troy oz.
- * If fetch fails user can type spot prices manually in the input fields.
+ * Primary: metals.live (real-time USD) + open.er-api.com (USD/ZAR, hourly).
+ * Fallback: fawazahmed0 CDN (daily). Auto-refreshes every 5 minutes.
+ * If all fail, user can type spot prices manually.
  */
 function fetchPrices() {
   var statusEl = document.getElementById('calc-status');
   statusEl.textContent = 'Fetching live spot prices...';
   statusEl.style.color = '#888';
 
-  var BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/';
-
-  Promise.all([
-    fetch(BASE + 'xau.json').then(function(r) { return r.json(); }),
-    fetch(BASE + 'xag.json').then(function(r) { return r.json(); })
-  ]).then(function(res) {
-    var goldZAR   = res[0].xau.zar;   /* ZAR per troy oz — raw spot */
-    var silverZAR = res[1].xag.zar;
-
-    /* Populate editable spot fields so user can verify or override */
+  function applyPrices(goldZAR, silverZAR, source) {
     document.getElementById('calc-gold-spot').value   = goldZAR.toFixed(2);
     document.getElementById('calc-silver-spot').value = silverZAR.toFixed(2);
-
+    var now = new Date();
+    var ts  = pad(now.getHours()) + ':' + pad(now.getMinutes());
     statusEl.textContent =
-      'Live prices loaded — Gold spot: R' + fmtNum(goldZAR) +
-      '/oz · Silver spot: R' + fmtNum(silverZAR) + '/oz (replacement markup applied below)';
+      'Gold: R' + fmtNum(goldZAR) + '/oz · Silver: R' + fmtNum(silverZAR) +
+      '/oz — updated ' + ts + ' (' + source + ')';
     statusEl.style.color = '#2a7a2a';
     calcValue();
+  }
+
+  /* ── Tier 1: Yahoo Finance (real-time XAUZAR + XAGZAR) ── */
+  Promise.all([
+    fetch('https://query1.finance.yahoo.com/v8/finance/chart/XAUZAR=X?interval=1m&range=1d').then(function(r) { return r.json(); }),
+    fetch('https://query1.finance.yahoo.com/v8/finance/chart/XAGZAR=X?interval=1m&range=1d').then(function(r) { return r.json(); })
+  ]).then(function(res) {
+    var g = res[0].chart.result[0].meta.regularMarketPrice;
+    var s = res[1].chart.result[0].meta.regularMarketPrice;
+    if (!g || !s) throw new Error('no price');
+    applyPrices(g, s, 'Yahoo Finance — real-time');
   }).catch(function() {
-    statusEl.textContent =
-      'Auto-fetch failed — type the gold and silver ZAR spot prices above manually, then enter the oz amounts below.';
-    statusEl.style.color = '#cc4400';
+    /* ── Tier 2: fawazahmed0 (daily fallback) ── */
+    var BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/';
+    Promise.all([
+      fetch(BASE + 'xau.json').then(function(r) { return r.json(); }),
+      fetch(BASE + 'xag.json').then(function(r) { return r.json(); })
+    ]).then(function(res) {
+      applyPrices(res[0].xau.zar, res[1].xag.zar, 'daily fallback');
+    }).catch(function() {
+      statusEl.textContent = 'Price fetch failed — enter gold and silver ZAR spot prices manually above.';
+      statusEl.style.color = '#cc4400';
+    });
   });
 }
+
+setInterval(fetchPrices, 5 * 60 * 1000);
 
 function calcValue() {
   /* Read from editable spot fields so manual override always works */
@@ -832,8 +875,12 @@ function sliHeader() {
 }
 
 function shipperRow(date, time, inv) {
+  var shipperVal = get('f-shipper') || 'sabis';
+  var shipperTxt = shipperVal === 'mgmt'
+    ? 'SA Management Account<br>BRINKS ACCOUNT NUMBER: 59646'
+    : 'SA BULLION INVESTOR SERVICES<br>BRINKS ACCOUNT NUMBER: 57403';
   return '<tr>' +
-    '<td class="col-l"><span class="field-lbl">Shipper</span><br><strong>SA BULLION INVESTOR SERVICES<br>BRINKS ACCOUNT NUMBER: 57403</strong></td>' +
+    '<td class="col-l"><span class="field-lbl">Shipper</span><br><strong>' + shipperTxt + '</strong></td>' +
     '<td class="col-r" style="padding:6px 8px !important">' +
       'Date&nbsp;:&nbsp;<strong>' + date + '</strong>&nbsp;&nbsp;&nbsp;&nbsp;Time&nbsp;:&nbsp;<strong>' + time + '</strong>' +
       '<hr style="border:none;border-top:1px solid #ccc;margin:5px 0">' +
@@ -947,9 +994,7 @@ function renderSLI() {
         '<strong>Collection:</strong> ' + collDate + '&nbsp;&nbsp;<strong>Time:</strong> ' + collTime + 'h<br>' +
         (collCont ? '<strong>Contact Person:</strong> ' + collCont : '') +
         '<hr class="divider">' +
-        'Consignee<br>' +
-        '<hr class="divider">' +
-        '<strong>' + consignee + '</strong>' +
+        'Consignee : <strong>' + consignee + '</strong>' +
         '<hr class="divider">' +
         '<span class="field-lbl u">Delivery location</span><br>' +
         (delivName ? delivName + ',<br>' : '') +
@@ -1050,7 +1095,7 @@ function generateEmail() {
   var recipient = firstNameFrom(delivCont);
 
   /* Subject */
-  var subject = 'BRINKS Collection & Delivery' + (dateNice ? ' ' + dateNice : '');
+  var subject = 'BRINKS Collection & Delivery' + (dateNice ? ' ' + dateNice : '') + ' - GLD' + invoiceNum;
   document.getElementById('email-subject').textContent = subject;
 
   /* Goods bullets — each non-empty line becomes "- line" */
@@ -1066,30 +1111,80 @@ function generateEmail() {
   var collSection  = collBlock  || '[collection address not set]';
   var delivSection = delivBlock || '[delivery address not set]';
 
-  var valueLine  = value  ? '- Value: ' + value  : '- Value: [not set]';
-  var weightLine = weight ? '- Estimated Weight: ' + weight + ' kg' : '- Estimated Weight: [not set]';
+  var valueLabel  = value  ? value  : '[not set]';
+  var weightLabel = weight ? weight + ' kg' : '[not set]';
 
   var collDateLine = day && dateNice ? 'a collection on ' + day + ' ' + dateNice : 'a collection on the date shown in the attached SLI';
 
-  var body =
-    'Dear @' + recipient + ' and team,\n\n' +
+  function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  var html =
+    'Dear @Sophy and team,\n\n' +
     'I hope this message finds you well.\n\n' +
-    'Please find attached the relevant SLI for ' + collDateLine + '.\n\n' +
-    'Details:\n\n' +
-    bulletLines + '\n\n' +
-    valueLine + '\n' +
-    weightLine + '\n\n' +
-    'Collection Address:\n' + collSection + '\n\n' +
-    'Delivery Address:\n' + delivSection + '\n\n' +
+    'Please find attached the relevant SLI for ' + esc(collDateLine) + '.\n\n' +
+    '<strong>Details:</strong>\n\n' +
+    esc(bulletLines) + '\n\n' +
+    '- <strong>Value:</strong> ' + esc(valueLabel) + '\n' +
+    '- <strong>Estimated Weight:</strong> ' + esc(weightLabel) + '\n\n' +
+    '<strong>Collection Address:</strong>\n' + esc(collSection) + '\n\n' +
+    '<strong>Delivery Address:</strong>\n' + esc(delivSection) + '\n\n' +
     'Kindly confirm at your earliest convenience.';
 
-  document.getElementById('email-body').value = body;
+  document.getElementById('email-body').innerHTML = html;
+}
+
+function openInOutlook() {
+  var route = get('f-route') || '';
+  var isCpt = route.indexOf('cpt') >= 0;
+
+  var to = [
+    'Sophy.Makopo@brinks.com',
+    'Gloria.Heradien@brinks.com',
+    'Thuli.Ndlovu@brinks.com',
+    'Bianca.Tucker@brinks.com',
+    'dj.jnb@brinksglobal.com'
+  ];
+  if (isCpt) to.push('farahnaaz.hassen@brinks.com');
+
+  var cc = [
+    'angelique@sabullion.co.za',
+    'business@sabullion.co.za',
+    'zubayr.abdullatief@sabullion.co.za'
+  ];
+
+  var subject  = document.getElementById('email-subject').textContent;
+  var bodyEl   = document.getElementById('email-body');
+  var htmlBody = bodyEl.innerHTML;
+  var plainBody = bodyEl.innerText;
+
+  /* Copy rich HTML to clipboard so Ctrl+V in Outlook pastes with bold */
+  try {
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html':  new Blob([htmlBody],  { type: 'text/html' }),
+        'text/plain': new Blob([plainBody], { type: 'text/plain' })
+      })
+    ]);
+  } catch(e) {
+    navigator.clipboard.writeText(plainBody);
+  }
+
+  /* Show paste reminder */
+  var rem = document.getElementById('outlook-reminder');
+  rem.style.display = 'inline';
+  setTimeout(function() { rem.style.display = 'none'; }, 8000);
+
+  var mailto = 'mailto:' + to.join(';') +
+    '?cc=' + cc.join(';') +
+    '&subject=' + encodeURIComponent(subject) +
+    '&body='    + encodeURIComponent(plainBody);
+
+  window.location.href = mailto;
 }
 
 function copyEmail() {
-  var el = document.getElementById('email-body');
-  el.select();
-  document.execCommand('copy');
+  var text = document.getElementById('email-body').innerText;
+  navigator.clipboard.writeText(text);
   var c = document.getElementById('copy-confirm');
   c.style.display = 'inline';
   setTimeout(function(){ c.style.display = 'none'; }, 2000);
