@@ -277,7 +277,7 @@
     <div class="fg fg3">
       <div>
         <label>Collection Date</label>
-        <input type="date" id="f-coll-date" class="input-manual" oninput="render()" />
+        <input type="date" id="f-coll-date" class="input-manual" oninput="syncDeliveryDate();render()" />
       </div>
       <div>
         <label>Collection Time</label>
@@ -688,6 +688,21 @@ function restoreFormState() {
 }
 
 /* ══ ROUTE CHANGE ══════════════════════════════════════════════════════════ */
+var CPT_ROUTES = ['cpt-to-bfv','bfv-to-cpt','cpt-to-scoin'];
+
+function syncDeliveryDate() {
+  var collDateStr = document.getElementById('f-coll-date').value;
+  if (!collDateStr) return;
+  var route = document.getElementById('f-route').value;
+  var isCpt = CPT_ROUTES.indexOf(route) >= 0;
+  var d = new Date(collDateStr + 'T00:00:00');
+  if (isCpt) d.setDate(d.getDate() + 1);
+  var yyyy = d.getFullYear();
+  var mm   = pad(d.getMonth() + 1);
+  var dd   = pad(d.getDate());
+  document.getElementById('f-deliv-date').value = yyyy + '-' + mm + '-' + dd;
+}
+
 function onRouteChange() {
   var key = document.getElementById('f-route').value;
   var r   = ROUTES[key];
@@ -703,6 +718,7 @@ function onRouteChange() {
   set('f-brinks-charge',r.brinksChg);
   set('f-user-charge',  r.userChg);
   set('f-special',      r.special || '');
+  syncDeliveryDate();
   render();
 }
 
@@ -828,7 +844,11 @@ function applyCalcValue() {
   var goldSpot   = parseFloat(document.getElementById('calc-gold-spot').value)   || 0;
   var silverSpot = parseFloat(document.getElementById('calc-silver-spot').value) || 0;
   var goldOz     = parseFloat(document.getElementById('calc-gold-oz').value)     || 0;
+  var goldG      = parseFloat(document.getElementById('calc-gold-g').value)      || 0;
+  if (goldG > 0 && goldOz === 0) goldOz = goldG / 33.93;
   var silverOz   = parseFloat(document.getElementById('calc-silver-oz').value)   || 0;
+  var silverG    = parseFloat(document.getElementById('calc-silver-g').value)    || 0;
+  if (silverG > 0 && silverOz === 0) silverOz = silverG / 31.1035;
   var total = (goldOz * goldSpot * 1.045) + (silverOz * silverSpot * 1.08);
   if (total > 0) {
     document.getElementById('f-value').value = 'R ' + fmtNum(total);
