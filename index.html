@@ -256,7 +256,7 @@
     <div class="fg fg1">
       <div>
         <label>Sealed Packages Said to Contain</label>
-        <textarea id="f-sealed" placeholder="Leave blank to copy from Description above" oninput="render()"></textarea>
+        <textarea id="f-sealed" class="input-manual" placeholder="e.g. Precious Metals" oninput="render()"></textarea>
       </div>
     </div>
   </div>
@@ -285,7 +285,7 @@
       </div>
       <div>
         <label>Collection Contact</label>
-        <input type="text" id="f-coll-contact" list="contacts-list" placeholder="Name — Phone" oninput="render()" />
+        <select id="f-coll-contact" onchange="render()"><option value="">— Select contact —</option></select>
       </div>
     </div>
   </div>
@@ -314,7 +314,7 @@
       </div>
       <div>
         <label>Delivery Contact</label>
-        <input type="text" id="f-deliv-contact" list="contacts-list" placeholder="Name — Phone" oninput="render()" />
+        <select id="f-deliv-contact" onchange="render()"><option value="">— Select contact —</option></select>
       </div>
     </div>
   </div>
@@ -610,13 +610,24 @@ window.onload = function() {
   var cnl = document.getElementById('contacts-name-list');
   var pl  = document.getElementById('products-list');
 
+  var collSel  = document.getElementById('f-coll-contact');
+  var delivSel = document.getElementById('f-deliv-contact');
+
   CONTACTS.forEach(function(c) {
-    var o1 = document.createElement('option');
-    o1.value = c.name + (c.phone ? ' — ' + c.phone : '');
-    cl.appendChild(o1);
-    var o2 = document.createElement('option');
-    o2.value = c.name;
-    cnl.appendChild(o2);
+    var val = c.name + (c.phone ? ' — ' + c.phone : '');
+    var label = val + (c.loc ? '  (' + c.loc + ')' : '');
+
+    /* datalists */
+    var o1 = document.createElement('option'); o1.value = val; cl.appendChild(o1);
+    var o2 = document.createElement('option'); o2.value = c.name; cnl.appendChild(o2);
+
+    /* contact dropdowns */
+    [collSel, delivSel].forEach(function(sel) {
+      var o = document.createElement('option');
+      o.value = val;
+      o.textContent = label;
+      sel.appendChild(o);
+    });
   });
   PRODUCTS.forEach(function(p) {
     var o = document.createElement('option'); o.value = p; pl.appendChild(o);
@@ -634,7 +645,7 @@ window.onload = function() {
     });
     document.getElementById('f-time').value = ti;
     document.getElementById('f-coll-time').value = ti;
-    set('f-sealed', 'Precious Metals');
+    set('f-sealed', '');
     set('f-marks',  'N/A');
     set('f-pieces', 'N/A');
   }
