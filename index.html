@@ -780,52 +780,77 @@ function fmtValue(v) {
 
 /* ══ LIVE VALUE CALCULATOR ═════════════════════════════════════════════════ */
 /*
- * Primary: metals.live (real-time USD) + open.er-api.com (USD/ZAR, hourly).
- * Fallback: fawazahmed0 CDN (daily). Auto-refreshes every 5 minutes.
+ * Tier 1: fawazahmed0 via jsDelivr CDN (CORS-safe, daily ZAR rates).
+ * Tier 2: Cloudflare Pages mirror of same data.
+ * Auto-refreshes every 5 minutes. Manual button always works.
  * If all fail, user can type spot prices manually.
  */
+var _priceRefreshInterval = null;
+var _nextRefreshAt = null;
+var _countdownTimer = null;
+
+function startPriceCountdown() {
+  if (_countdownTimer) clearInterval(_countdownTimer);
+  _nextRefreshAt = Date.now() + 5 * 60 * 1000;
+  _countdownTimer = setInterval(function() {
+    var statusEl = document.getElementById('calc-status');
+    if (!statusEl || !statusEl.textContent.indexOf('R') === -1) return;
+    var remaining = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
+    var mins = Math.floor(remaining / 60);
+    var secs = remaining % 60;
+    var countdown = ' · next refresh in ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    var base = statusEl.getAttribute('data-base') || statusEl.textContent.split(' · next')[0];
+    statusEl.setAttribute('data-base', base);
+    statusEl.textContent = base + countdown;
+  }, 1000);
+}
+
 function fetchPrices() {
   var statusEl = document.getElementById('calc-status');
   statusEl.textContent = 'Fetching live spot prices...';
   statusEl.style.color = '#888';
+  statusEl.removeAttribute('data-base');
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
 
   function applyPrices(goldZAR, silverZAR, source) {
     document.getElementById('calc-gold-spot').value   = goldZAR.toFixed(2);
     document.getElementById('calc-silver-spot').value = silverZAR.toFixed(2);
     var now = new Date();
     var ts  = pad(now.getHours()) + ':' + pad(now.getMinutes());
-    statusEl.textContent =
-      'Gold: R' + fmtNum(goldZAR) + '/oz · Silver: R' + fmtNum(silverZAR) +
-      '/oz — updated ' + ts + ' (' + source + ')';
+    var base = 'Gold: R' + fmtNum(goldZAR) + '/oz · Silver: R' + fmtNum(silverZAR) + '/oz — updated ' + ts + ' (' + source + ')';
+    statusEl.setAttribute('data-base', base);
+    statusEl.textContent = base;
     statusEl.style.color = '#2a7a2a';
     calcValue();
+    startPriceCountdown();
   }
 
-  /* ── Tier 1: Yahoo Finance (real-time XAUZAR + XAGZAR) ── */
-  Promise.all([
-    fetch('https://query1.finance.yahoo.com/v8/finance/chart/XAUZAR=X?interval=1m&range=1d').then(function(r) { return r.json(); }),
-    fetch('https://query1.finance.yahoo.com/v8/finance/chart/XAGZAR=X?interval=1m&range=1d').then(function(r) { return r.json(); })
-  ]).then(function(res) {
-    var g = res[0].chart.result[0].meta.regularMarketPrice;
-    var s = res[1].chart.result[0].meta.regularMarketPrice;
-    if (!g || !s) throw new Error('no price');
-    applyPrices(g, s, 'Yahoo Finance — real-time');
-  }).catch(function() {
-    /* ── Tier 2: fawazahmed0 (daily fallback) ── */
-    var BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/';
-    Promise.all([
-      fetch(BASE + 'xau.json').then(function(r) { return r.json(); }),
-      fetch(BASE + 'xag.json').then(function(r) { return r.json(); })
+  function trySource(baseUrl, label) {
+    return Promise.all([
+      fetch(baseUrl + 'xau.json').then(function(r) { return r.json(); }),
+      fetch(baseUrl + 'xag.json').then(function(r) { return r.json(); })
     ]).then(function(res) {
-      applyPrices(res[0].xau.zar, res[1].xag.zar, 'daily fallback');
-    }).catch(function() {
-      statusEl.textContent = 'Price fetch failed — enter gold and silver ZAR spot prices manually above.';
-      statusEl.style.color = '#cc4400';
+      var g = res[0].xau && res[0].xau.zar;
+      var s = res[1].xag && res[1].xag.zar;
+      if (!g || !s) throw new Error('no data');
+      applyPrices(g, s, label);
     });
+  }
+
+  /* Tier 1: jsDelivr CDN */
+  trySource('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/', 'daily rate')
+  .catch(function() {
+    /* Tier 2: Cloudflare Pages mirror */
+    return trySource('https://latest.currency-api.pages.dev/v1/currencies/', 'daily rate');
+  })
+  .catch(function() {
+    statusEl.textContent = 'Price fetch failed — enter gold and silver ZAR spot prices manually above.';
+    statusEl.style.color = '#cc4400';
   });
 }
 
-setInterval(fetchPrices, 5 * 60 * 1000);
+if (_priceRefreshInterval) clearInterval(_priceRefreshInterval);
+_priceRefreshInterval = setInterval(fetchPrices, 5 * 60 * 1000);
 
 /* Troy oz ↔ grams converters */
 var GOLD_G_PER_OZ   = 33.93;    /* 22ct coin weight */
