@@ -199,17 +199,18 @@
         <div id="calc-silver-price" class="calc-price-box">—</div>
       </div>
       <div>
-        <label>Gold (troy oz) — this shipment</label>
-        <input type="text" id="calc-gold-oz" placeholder="0" oninput="calcValue()">
-        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">— or coin weight in grams (÷33.93) —</div>
-        <input type="text" id="calc-gold-g" placeholder="e.g. 339.3g = 10 coins" oninput="calcValue()" style="font-size:12px">
-        <div style="font-size:9px;color:#aaa;margin-top:2px">22ct coins: 33.93g per coin = 1 troy oz</div>
+        <label>Gold — Troy oz</label>
+        <input type="text" id="calc-gold-oz" placeholder="troy oz" oninput="syncGoldFromOz()">
+        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">↕ auto-converts (22ct: 33.93g = 1 troy oz)</div>
+        <label>Gold — Grams</label>
+        <input type="text" id="calc-gold-g" placeholder="grams" oninput="syncGoldFromG()" style="font-size:12px">
       </div>
       <div>
-        <label>Silver (troy oz) — this shipment</label>
-        <input type="text" id="calc-silver-oz" placeholder="0" oninput="calcValue()">
-        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">— or pure silver grams (÷31.1035) —</div>
-        <input type="text" id="calc-silver-g" placeholder="e.g. 311.0g pure silver" oninput="calcValue()" style="font-size:12px">
+        <label>Silver — Troy oz</label>
+        <input type="text" id="calc-silver-oz" placeholder="troy oz" oninput="syncSilverFromOz()">
+        <div style="font-size:10px;color:#aaa;text-align:center;margin:3px 0">↕ auto-converts (31.1035g = 1 troy oz)</div>
+        <label>Silver — Grams</label>
+        <input type="text" id="calc-silver-g" placeholder="grams" oninput="syncSilverFromG()" style="font-size:12px">
       </div>
     </div>
     <div class="fg fg2" style="align-items:end;margin-bottom:0">
@@ -826,6 +827,31 @@ function fetchPrices() {
 
 setInterval(fetchPrices, 5 * 60 * 1000);
 
+/* Troy oz ↔ grams converters */
+var GOLD_G_PER_OZ   = 33.93;    /* 22ct coin weight */
+var SILVER_G_PER_OZ = 31.1035;  /* pure silver */
+
+function syncGoldFromOz() {
+  var oz = parseFloat(document.getElementById('calc-gold-oz').value);
+  document.getElementById('calc-gold-g').value = (oz > 0) ? (oz * GOLD_G_PER_OZ).toFixed(2) : '';
+  calcValue();
+}
+function syncGoldFromG() {
+  var g = parseFloat(document.getElementById('calc-gold-g').value);
+  document.getElementById('calc-gold-oz').value = (g > 0) ? (g / GOLD_G_PER_OZ).toFixed(4) : '';
+  calcValue();
+}
+function syncSilverFromOz() {
+  var oz = parseFloat(document.getElementById('calc-silver-oz').value);
+  document.getElementById('calc-silver-g').value = (oz > 0) ? (oz * SILVER_G_PER_OZ).toFixed(2) : '';
+  calcValue();
+}
+function syncSilverFromG() {
+  var g = parseFloat(document.getElementById('calc-silver-g').value);
+  document.getElementById('calc-silver-oz').value = (g > 0) ? (g / SILVER_G_PER_OZ).toFixed(4) : '';
+  calcValue();
+}
+
 function calcValue() {
   /* Read from editable spot fields so manual override always works */
   var goldSpot   = parseFloat(document.getElementById('calc-gold-spot').value)   || 0;
@@ -839,12 +865,7 @@ function calcValue() {
   document.getElementById('calc-silver-price').textContent = silverZAR > 0 ? 'R ' + fmtNum(silverZAR) : '—';
 
   var goldOz   = parseFloat(document.getElementById('calc-gold-oz').value)   || 0;
-  var goldG    = parseFloat(document.getElementById('calc-gold-g').value)    || 0;
-  if (goldG > 0 && goldOz === 0) goldOz = goldG / 33.93;
-
   var silverOz = parseFloat(document.getElementById('calc-silver-oz').value) || 0;
-  var silverG  = parseFloat(document.getElementById('calc-silver-g').value)  || 0;
-  if (silverG > 0 && silverOz === 0) silverOz = silverG / 31.1035;
 
   var total = (goldOz * goldZAR) + (silverOz * silverZAR);
 
