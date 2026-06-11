@@ -281,7 +281,7 @@
         <input type="date" id="f-coll-date" class="input-manual" oninput="syncDeliveryDate();render()" />
       </div>
       <div>
-        <label>Collection Time</label>
+        <label>Collection Time <span style="color:#aaa;font-weight:normal">(leave blank to omit)</span></label>
         <input type="time" id="f-coll-time" class="input-manual" oninput="render()" />
       </div>
       <div>
@@ -1041,7 +1041,7 @@ function renderSLI() {
   var sealed = br(get('f-sealed') || goodsRaw);
   var special = get('f-special') || '';
   var responsible = get('f-responsible') || '';
-  var collDate = fmtDate(get('f-coll-date')), collTime = fmtTime(get('f-coll-time'));
+  var collDate = fmtDate(get('f-coll-date')), collTimeRaw = get('f-coll-time');
   var collCont = get('f-coll-contact'), collAddr = br(get('f-coll-addr')), collName = get('f-coll-name');
   var consignee = br(get('f-consignee'));
   var delivAddr = br(get('f-deliv-addr')), delivName = get('f-deliv-name');
@@ -1068,7 +1068,7 @@ function renderSLI() {
         '<span class="field-lbl u">Collection location:</span><br>' +
         (collName ? collName + ',<br>' : '') +
         collAddr + '<br>' +
-        '<strong>Collection:</strong> ' + collDate + '&nbsp;&nbsp;<strong>Time:</strong> ' + collTime + 'h<br>' +
+        '<strong>Collection:</strong> ' + collDate + (collTimeRaw ? '&nbsp;&nbsp;<strong>Time:</strong> ' + collTimeRaw + 'h' : '') + '<br>' +
         (collCont ? '<strong>Contact Person:</strong> ' + collCont : '') +
         '<hr class="divider">' +
         'Consignee : <strong>' + consignee + '</strong>' +
