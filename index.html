@@ -54,12 +54,9 @@
   .btn-copy { background:#1a1a2e; color:#f0c060; border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
   .btn-copy:hover { background:#2d2d5e; }
   .copy-confirm { font-size:11px; color:#2a9d2a; margin-left:10px; display:none; }
-  /* Route search combobox */
-  #f-route-dd { display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #f0c060; border-top:none; border-radius:0 0 6px 6px; max-height:300px; overflow-y:auto; z-index:500; box-shadow:0 6px 16px rgba(0,0,0,.15); }
-  .rd-item { padding:9px 13px; cursor:pointer; font-size:13px; color:#222; border-bottom:1px solid #f5f0e0; }
-  .rd-item:last-child { border-bottom:none; }
-  .rd-item:hover { background:#fff8e8; }
-  .rd-none { padding:9px 13px; color:#999; font-size:12px; font-style:italic; }
+  /* Route search filter */
+  #f-route-filter { margin-bottom:5px; font-size:12px; padding:6px 10px; border:1px solid #ddd; border-radius:5px; width:100%; background:#fafafa; }
+  #f-route-filter:focus { outline:none; border-color:#1a1a2e; background:white; }
 }
 
 @media print {
@@ -123,15 +120,8 @@
     <div class="fg fg1" style="margin-bottom:11px">
       <div>
         <label>Shipment Route — select to auto-fill all fields</label>
-        <div style="position:relative" id="route-search-wrap">
-          <input type="text" id="f-route-search" class="route-select input-manual"
-            placeholder="— Search or select a route —"
-            oninput="filterRoutes(this.value)"
-            onfocus="openRouteDD()"
-            autocomplete="off" />
-          <div id="f-route-dd"></div>
-        </div>
-        <select id="f-route" style="display:none" onchange="onRouteChange()">
+        <input type="text" id="f-route-filter" placeholder="&#128269; Search routes..." oninput="filterRouteSelect(this.value)" autocomplete="off" />
+        <select class="route-select input-manual" id="f-route" onchange="onRouteChange()">
           <option value="">— Select a route —</option>
           <option value="cpt-to-bfv">Cape Town (Brickfield) → Brinks BFV</option>
           <option value="bfv-to-cpt">Brinks BFV → Cape Town (Brickfield)</option>
@@ -601,7 +591,7 @@ var ROUTES = {
   }
 };
 
-/* ══ ROUTE SEARCH ══════════════════════════════════════════════════════════ */
+/* ══ ROUTE FILTER ═══════════════════════════════════════════════════════════ */
 var ROUTE_ORDER = [
   'cpt-to-bfv','bfv-to-cpt','brinks-to-vp','vp-to-bfv',
   'sez-to-bfv','bfv-to-sez','sa-mint-to-bfv','bfv-to-scoin',
@@ -612,62 +602,24 @@ var ROUTE_ORDER = [
   'storage-movement','custom'
 ];
 
-function initRouteSearch() {
-  renderRouteItems('');
-  document.addEventListener('click', function(e) {
-    var wrap = document.getElementById('route-search-wrap');
-    if (wrap && !wrap.contains(e.target)) {
-      document.getElementById('f-route-dd').style.display = 'none';
-    }
-  });
-}
-
-function renderRouteItems(q) {
-  var dd    = document.getElementById('f-route-dd');
+function filterRouteSelect(q) {
+  var sel = document.getElementById('f-route');
+  var currentVal = sel.value;
   var lower = q ? q.toLowerCase() : '';
-  var items = ROUTE_ORDER.filter(function(k) {
-    if (!ROUTES[k]) return false;
-    return !lower || ROUTES[k].label.toLowerCase().indexOf(lower) >= 0;
+  while (sel.options.length) sel.remove(0);
+  var blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = '— Select a route —';
+  sel.appendChild(blank);
+  ROUTE_ORDER.forEach(function(k) {
+    if (!ROUTES[k]) return;
+    if (lower && ROUTES[k].label.toLowerCase().indexOf(lower) < 0) return;
+    var o = document.createElement('option');
+    o.value = k;
+    o.textContent = ROUTES[k].label;
+    sel.appendChild(o);
   });
-  dd.innerHTML = '';
-  if (!items.length) {
-    dd.innerHTML = '<div class=”rd-none”>No routes match “' + q + '”</div>';
-    return;
-  }
-  items.forEach(function(k) {
-    var div = document.createElement('div');
-    div.className = 'rd-item';
-    div.textContent = ROUTES[k].label;
-    div.onclick = (function(key) {
-      return function() { selectRoute(key); };
-    })(k);
-    dd.appendChild(div);
-  });
-}
-
-function openRouteDD() {
-  var inp = document.getElementById('f-route-search');
-  renderRouteItems(inp.value);
-  document.getElementById('f-route-dd').style.display = 'block';
-}
-
-function filterRoutes(q) {
-  document.getElementById('f-route-dd').style.display = 'block';
-  renderRouteItems(q);
-}
-
-function selectRoute(key) {
-  document.getElementById('f-route').value = key;
-  document.getElementById('f-route-search').value = ROUTES[key] ? ROUTES[key].label : '';
-  document.getElementById('f-route-dd').style.display = 'none';
-  onRouteChange();
-}
-
-function syncRouteSearchLabel() {
-  var key = document.getElementById('f-route').value;
-  if (key && ROUTES[key]) {
-    document.getElementById('f-route-search').value = ROUTES[key].label;
-  }
+  if (currentVal) sel.value = currentVal;
 }
 
 var CONTACTS = [
@@ -736,9 +688,7 @@ window.onload = function() {
     var o = document.createElement('option'); o.value = p; pl.appendChild(o);
   });
 
-  initRouteSearch();
   var restored = restoreFormState();
-  syncRouteSearchLabel();
 
   if (!restored) {
     /* First ever load — apply factory defaults */
