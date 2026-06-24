@@ -602,38 +602,45 @@ var ROUTES = {
 };
 
 /* ══ ROUTE SEARCH ══════════════════════════════════════════════════════════ */
+var ROUTE_ORDER = [
+  'cpt-to-bfv','bfv-to-cpt','brinks-to-vp','vp-to-bfv',
+  'sez-to-bfv','bfv-to-sez','sa-mint-to-bfv','bfv-to-scoin',
+  'cpt-to-scoin','rrl-to-bfv','metcon-to-sez','metcon-to-bfv',
+  'perth-mint-to-bfv','ferrari-to-bfv','reserve-to-bfv',
+  'union-vault-to-bfv','bfv-to-union-vault','bfv-to-metcon',
+  'sabis-to-mgmt','bfv-mgmt-to-sabis','sez-mgmt-to-sabis',
+  'storage-movement','custom'
+];
+
 function initRouteSearch() {
-  var sel = document.getElementById('f-route');
-  var dd  = document.getElementById('f-route-dd');
   renderRouteItems('');
   document.addEventListener('click', function(e) {
     var wrap = document.getElementById('route-search-wrap');
-    if (wrap && !wrap.contains(e.target)) dd.style.display = 'none';
+    if (wrap && !wrap.contains(e.target)) {
+      document.getElementById('f-route-dd').style.display = 'none';
+    }
   });
 }
 
 function renderRouteItems(q) {
-  var sel    = document.getElementById('f-route');
-  var dd     = document.getElementById('f-route-dd');
-  var lower  = q.toLowerCase();
-  var items  = [];
-  for (var i = 0; i < sel.options.length; i++) {
-    var o = sel.options[i];
-    if (!o.value) continue;
-    if (!q || o.text.toLowerCase().indexOf(lower) >= 0) items.push(o);
-  }
+  var dd    = document.getElementById('f-route-dd');
+  var lower = q ? q.toLowerCase() : '';
+  var items = ROUTE_ORDER.filter(function(k) {
+    if (!ROUTES[k]) return false;
+    return !lower || ROUTES[k].label.toLowerCase().indexOf(lower) >= 0;
+  });
   dd.innerHTML = '';
   if (!items.length) {
-    dd.innerHTML = '<div class="rd-none">No routes match “' + q + '”</div>';
+    dd.innerHTML = '<div class=”rd-none”>No routes match “' + q + '”</div>';
     return;
   }
-  items.forEach(function(o) {
+  items.forEach(function(k) {
     var div = document.createElement('div');
     div.className = 'rd-item';
-    div.textContent = o.text;
-    div.onclick = (function(key, label) {
-      return function() { selectRoute(key, label); };
-    })(o.value, o.text);
+    div.textContent = ROUTES[k].label;
+    div.onclick = (function(key) {
+      return function() { selectRoute(key); };
+    })(k);
     dd.appendChild(div);
   });
 }
@@ -649,20 +656,17 @@ function filterRoutes(q) {
   renderRouteItems(q);
 }
 
-function selectRoute(key, label) {
+function selectRoute(key) {
   document.getElementById('f-route').value = key;
-  document.getElementById('f-route-search').value = label;
+  document.getElementById('f-route-search').value = ROUTES[key] ? ROUTES[key].label : '';
   document.getElementById('f-route-dd').style.display = 'none';
   onRouteChange();
 }
 
 function syncRouteSearchLabel() {
-  var sel = document.getElementById('f-route');
-  var inp = document.getElementById('f-route-search');
-  var key = sel.value;
-  if (!key) return;
-  for (var i = 0; i < sel.options.length; i++) {
-    if (sel.options[i].value === key) { inp.value = sel.options[i].text; return; }
+  var key = document.getElementById('f-route').value;
+  if (key && ROUTES[key]) {
+    document.getElementById('f-route-search').value = ROUTES[key].label;
   }
 }
 
