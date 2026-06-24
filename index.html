@@ -54,6 +54,12 @@
   .btn-copy { background:#1a1a2e; color:#f0c060; border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
   .btn-copy:hover { background:#2d2d5e; }
   .copy-confirm { font-size:11px; color:#2a9d2a; margin-left:10px; display:none; }
+  /* Route search combobox */
+  #f-route-dd { display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #f0c060; border-top:none; border-radius:0 0 6px 6px; max-height:300px; overflow-y:auto; z-index:500; box-shadow:0 6px 16px rgba(0,0,0,.15); }
+  .rd-item { padding:9px 13px; cursor:pointer; font-size:13px; color:#222; border-bottom:1px solid #f5f0e0; }
+  .rd-item:last-child { border-bottom:none; }
+  .rd-item:hover { background:#fff8e8; }
+  .rd-none { padding:9px 13px; color:#999; font-size:12px; font-style:italic; }
 }
 
 @media print {
@@ -117,7 +123,15 @@
     <div class="fg fg1" style="margin-bottom:11px">
       <div>
         <label>Shipment Route — select to auto-fill all fields</label>
-        <select class="route-select input-manual" id="f-route" onchange="onRouteChange()">
+        <div style="position:relative" id="route-search-wrap">
+          <input type="text" id="f-route-search" class="route-select input-manual"
+            placeholder="— Search or select a route —"
+            oninput="filterRoutes(this.value)"
+            onfocus="openRouteDD()"
+            autocomplete="off" />
+          <div id="f-route-dd"></div>
+        </div>
+        <select id="f-route" style="display:none" onchange="onRouteChange()">
           <option value="">— Select a route —</option>
           <option value="cpt-to-bfv">Cape Town (Brickfield) → Brinks BFV</option>
           <option value="bfv-to-cpt">Brinks BFV → Cape Town (Brickfield)</option>
@@ -134,6 +148,8 @@
           <option value="perth-mint-to-bfv">Perth Mint → Brinks BFV</option>
           <option value="ferrari-to-bfv">Ferrari → Brinks BFV</option>
           <option value="reserve-to-bfv">Reserve Holdings → Brinks BFV</option>
+          <option value="union-vault-to-bfv">Union Vault → Brinks BFV</option>
+          <option value="bfv-to-union-vault">Brinks BFV → Union Vault</option>
           <option value="bfv-to-metcon">Brinks BFV → Metcon</option>
           <option value="sabis-to-mgmt">SABIS Account → Management Account</option>
           <option value="bfv-mgmt-to-sabis">BFV Management Account → SABIS Account</option>
@@ -560,6 +576,22 @@ var ROUTES = {
     responsible:'Abdullah Aragoneses', collContact:'', delivContact:'',
     special:'Securing 12 months storage movement'
   },
+  'bfv-to-union-vault':{
+    label:'Brinks BFV → Union Vault',
+    coll:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    deliv:{ name:'Union Vault', addr:'176 Bronkhorst Street\nNieuw Muckleneuk\nPretoria, Gauteng, 0181' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:'Patrick Georgiades — 079 368 6084'
+  },
+  'union-vault-to-bfv':{
+    label:'Union Vault → Brinks BFV',
+    coll:{ name:'Union Vault', addr:'176 Bronkhorst Street\nNieuw Muckleneuk\nPretoria, Gauteng, 0181' },
+    deliv:{ name:'Brinks Global Services', addr:'Paragon Building 1\nBedfordview, Germiston' },
+    consignee:'Brinks D&J',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Patrick Georgiades — 079 368 6084', delivContact:'Sophy — 082 897 7591'
+  },
   'custom':{
     label:'Custom / Other',
     coll:{ name:'', addr:'' }, deliv:{ name:'', addr:'' },
@@ -568,6 +600,71 @@ var ROUTES = {
     responsible:'Abdullah Aragoneses', collContact:'', delivContact:''
   }
 };
+
+/* ══ ROUTE SEARCH ══════════════════════════════════════════════════════════ */
+function initRouteSearch() {
+  var sel = document.getElementById('f-route');
+  var dd  = document.getElementById('f-route-dd');
+  renderRouteItems('');
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('route-search-wrap');
+    if (wrap && !wrap.contains(e.target)) dd.style.display = 'none';
+  });
+}
+
+function renderRouteItems(q) {
+  var sel    = document.getElementById('f-route');
+  var dd     = document.getElementById('f-route-dd');
+  var lower  = q.toLowerCase();
+  var items  = [];
+  for (var i = 0; i < sel.options.length; i++) {
+    var o = sel.options[i];
+    if (!o.value) continue;
+    if (!q || o.text.toLowerCase().indexOf(lower) >= 0) items.push(o);
+  }
+  dd.innerHTML = '';
+  if (!items.length) {
+    dd.innerHTML = '<div class="rd-none">No routes match “' + q + '”</div>';
+    return;
+  }
+  items.forEach(function(o) {
+    var div = document.createElement('div');
+    div.className = 'rd-item';
+    div.textContent = o.text;
+    div.onclick = (function(key, label) {
+      return function() { selectRoute(key, label); };
+    })(o.value, o.text);
+    dd.appendChild(div);
+  });
+}
+
+function openRouteDD() {
+  var inp = document.getElementById('f-route-search');
+  renderRouteItems(inp.value);
+  document.getElementById('f-route-dd').style.display = 'block';
+}
+
+function filterRoutes(q) {
+  document.getElementById('f-route-dd').style.display = 'block';
+  renderRouteItems(q);
+}
+
+function selectRoute(key, label) {
+  document.getElementById('f-route').value = key;
+  document.getElementById('f-route-search').value = label;
+  document.getElementById('f-route-dd').style.display = 'none';
+  onRouteChange();
+}
+
+function syncRouteSearchLabel() {
+  var sel = document.getElementById('f-route');
+  var inp = document.getElementById('f-route-search');
+  var key = sel.value;
+  if (!key) return;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === key) { inp.value = sel.options[i].text; return; }
+  }
+}
 
 var CONTACTS = [
   { name:'Angelique Render',    phone:'064 385 1447', loc:'Brinks Bedfordview' },
@@ -578,6 +675,7 @@ var CONTACTS = [
   { name:'Lauren Berrington',   phone:'',             loc:'SCOIN Sandown' },
   { name:'Mokoena',             phone:'012 677 2435', loc:'SA Mint, Centurion' },
   { name:"Imran O'Brien",       phone:'',             loc:'Brinks' },
+  { name:'Patrick Georgiades', phone:'079 368 6084', loc:'Union Vault, Pretoria' },
 ];
 
 var PRODUCTS = [
@@ -634,7 +732,9 @@ window.onload = function() {
     var o = document.createElement('option'); o.value = p; pl.appendChild(o);
   });
 
+  initRouteSearch();
   var restored = restoreFormState();
+  syncRouteSearchLabel();
 
   if (!restored) {
     /* First ever load — apply factory defaults */
