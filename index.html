@@ -123,6 +123,7 @@
             placeholder="— Search or select a route —" autocomplete="off"
             oninput="routeSearch(this.value)"
             onclick="routeSearch(this.value)"
+            onkeydown="routeKeyNav(event)"
             onblur="setTimeout(function(){document.getElementById('f-route-list').style.display='none'},200)" />
           <div id="f-route-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:white;border:2px solid #f0c060;border-top:none;border-radius:0 0 6px 6px;z-index:999;box-shadow:0 6px 14px rgba(0,0,0,.15)"></div>
         </div>
@@ -607,7 +608,10 @@ var ROUTE_ORDER = [
   'storage-movement','custom'
 ];
 
+var routeHighlight = -1;
+
 function routeSearch(q) {
+  routeHighlight = -1;
   var list  = document.getElementById('f-route-list');
   var lower = (q || '').toLowerCase();
   list.innerHTML = '';
@@ -623,16 +627,47 @@ function routeSearch(q) {
     var d = document.createElement('div');
     d.textContent = ROUTES[k].label;
     d.style.cssText = 'padding:9px 13px;cursor:pointer;font-size:13px;color:#222;border-bottom:1px solid #f5f0e0;';
-    d.onmouseover = function() { d.style.background = '#fff8e8'; };
+    d.onmouseover = function() { routeHighlight = Array.prototype.indexOf.call(list.children, d); routeUpdateHighlight(); };
     d.onmouseout  = function() { d.style.background = ''; };
-    d.onmousedown = function() {
-      document.getElementById('f-route').value = k;
-      document.getElementById('f-route-search').value = ROUTES[k].label;
-      list.style.display = 'none';
-      onRouteChange();
-    };
+    d.onmousedown = function() { routeSelect(k); };
     list.appendChild(d);
   });
+}
+
+function routeUpdateHighlight() {
+  var list = document.getElementById('f-route-list');
+  Array.prototype.forEach.call(list.children, function(d, i) {
+    d.style.background = i === routeHighlight ? '#fff8e8' : '';
+    if (i === routeHighlight) d.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function routeKeyNav(e) {
+  var list = document.getElementById('f-route-list');
+  if (list.style.display === 'none') { routeSearch(document.getElementById('f-route-search').value); return; }
+  var items = list.children;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    routeHighlight = Math.min(routeHighlight + 1, items.length - 1);
+    routeUpdateHighlight();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    routeHighlight = Math.max(routeHighlight - 1, 0);
+    routeUpdateHighlight();
+  } else if (e.key === 'Enter' && routeHighlight >= 0) {
+    e.preventDefault();
+    items[routeHighlight].onmousedown();
+  } else if (e.key === 'Escape') {
+    list.style.display = 'none';
+  }
+}
+
+function routeSelect(k) {
+  document.getElementById('f-route').value = k;
+  document.getElementById('f-route-search').value = ROUTES[k].label;
+  document.getElementById('f-route-list').style.display = 'none';
+  routeHighlight = -1;
+  onRouteChange();
 }
 
 function syncRouteSearchLabel() {
