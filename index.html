@@ -1344,17 +1344,25 @@ function openInOutlook() {
     navigator.clipboard.writeText(plainBody);
   }
 
-  /* Show paste reminder */
-  var rem = document.getElementById('outlook-reminder');
-  rem.style.display = 'inline';
-  setTimeout(function() { rem.style.display = 'none'; }, 8000);
-
   var mailto = 'mailto:' + to.join(';') +
     '?cc=' + cc.join(';') +
     '&subject=' + encodeURIComponent(subject) +
     '&body='    + encodeURIComponent(plainBody);
 
+  var webUrl = 'https://outlook.office.com/mail/deeplink/compose' +
+    '?to='      + encodeURIComponent(to.join(';')) +
+    '&cc='      + encodeURIComponent(cc.join(';')) +
+    '&subject=' + encodeURIComponent(subject) +
+    '&body='    + encodeURIComponent(plainBody);
+
+  /* Try desktop Outlook */
   window.location.href = mailto;
+
+  /* Show fallback reminder with Outlook Web link */
+  var rem = document.getElementById('outlook-reminder');
+  rem.innerHTML = ' Email body copied. &nbsp;|&nbsp; Outlook didn\'t open? &nbsp;<a href="' + webUrl + '" target="_blank" style="color:#0078d4;font-weight:bold;text-decoration:underline">Open in Outlook Web &rarr;</a>';
+  rem.style.display = 'inline';
+  setTimeout(function() { rem.style.display = 'none'; }, 15000);
 }
 
 function copyEmail() {
