@@ -55,9 +55,6 @@
   .btn-copy { background:#1a1a2e; color:#f0c060; border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
   .btn-copy:hover { background:#2d2d5e; }
   .copy-confirm { font-size:11px; color:#2a9d2a; margin-left:10px; display:none; }
-  /* Route search filter */
-  #f-route-filter { margin-bottom:5px; font-size:12px; padding:6px 10px; border:1px solid #ddd; border-radius:5px; width:100%; background:#fafafa; }
-  #f-route-filter:focus { outline:none; border-color:#1a1a2e; background:white; }
 }
 
 @media print {
@@ -121,8 +118,15 @@
     <div class="fg fg1" style="margin-bottom:11px">
       <div>
         <label>Shipment Route — select to auto-fill all fields</label>
-        <input type="text" id="f-route-filter" placeholder="&#128269; Search routes..." oninput="filterRouteSelect(this.value)" autocomplete="off" />
-        <select class="route-select input-manual" id="f-route" onchange="onRouteChange()">
+        <div style="position:relative">
+          <input type="text" id="f-route-search" class="route-select input-manual"
+            placeholder="— Search or select a route —" autocomplete="off"
+            oninput="routeSearch(this.value)"
+            onclick="routeSearch(this.value)"
+            onblur="setTimeout(function(){document.getElementById('f-route-list').style.display='none'},200)" />
+          <div id="f-route-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:white;border:2px solid #f0c060;border-top:none;border-radius:0 0 6px 6px;z-index:999;box-shadow:0 6px 14px rgba(0,0,0,.15)"></div>
+        </div>
+        <select id="f-route" style="display:none" onchange="onRouteChange()">
           <option value="">— Select a route —</option>
           <option value="cpt-to-bfv">Cape Town (Brickfield) → Brinks BFV</option>
           <option value="bfv-to-cpt">Brinks BFV → Cape Town (Brickfield)</option>
@@ -592,7 +596,7 @@ var ROUTES = {
   }
 };
 
-/* ══ ROUTE FILTER ═══════════════════════════════════════════════════════════ */
+/* ══ ROUTE SEARCH ═══════════════════════════════════════════════════════════ */
 var ROUTE_ORDER = [
   'cpt-to-bfv','bfv-to-cpt','brinks-to-vp','vp-to-bfv',
   'sez-to-bfv','bfv-to-sez','sa-mint-to-bfv','bfv-to-scoin',
@@ -603,24 +607,39 @@ var ROUTE_ORDER = [
   'storage-movement','custom'
 ];
 
-function filterRouteSelect(q) {
-  var sel = document.getElementById('f-route');
-  var currentVal = sel.value;
-  var lower = q ? q.toLowerCase() : '';
-  while (sel.options.length) sel.remove(0);
-  var blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '— Select a route —';
-  sel.appendChild(blank);
-  ROUTE_ORDER.forEach(function(k) {
-    if (!ROUTES[k]) return;
-    if (lower && ROUTES[k].label.toLowerCase().indexOf(lower) < 0) return;
-    var o = document.createElement('option');
-    o.value = k;
-    o.textContent = ROUTES[k].label;
-    sel.appendChild(o);
+function routeSearch(q) {
+  var list  = document.getElementById('f-route-list');
+  var lower = (q || '').toLowerCase();
+  list.innerHTML = '';
+  list.style.display = 'block';
+  var matched = ROUTE_ORDER.filter(function(k) {
+    return ROUTES[k] && (!lower || ROUTES[k].label.toLowerCase().indexOf(lower) >= 0);
   });
-  if (currentVal) sel.value = currentVal;
+  if (!matched.length) {
+    list.innerHTML = '<div style="padding:9px 13px;color:#999;font-style:italic;font-size:12px">No routes match</div>';
+    return;
+  }
+  matched.forEach(function(k) {
+    var d = document.createElement('div');
+    d.textContent = ROUTES[k].label;
+    d.style.cssText = 'padding:9px 13px;cursor:pointer;font-size:13px;color:#222;border-bottom:1px solid #f5f0e0;';
+    d.onmouseover = function() { d.style.background = '#fff8e8'; };
+    d.onmouseout  = function() { d.style.background = ''; };
+    d.onmousedown = function() {
+      document.getElementById('f-route').value = k;
+      document.getElementById('f-route-search').value = ROUTES[k].label;
+      list.style.display = 'none';
+      onRouteChange();
+    };
+    list.appendChild(d);
+  });
+}
+
+function syncRouteSearchLabel() {
+  var key = document.getElementById('f-route').value;
+  if (key && ROUTES[key]) {
+    document.getElementById('f-route-search').value = ROUTES[key].label;
+  }
 }
 
 var CONTACTS = [
@@ -690,6 +709,7 @@ window.onload = function() {
   });
 
   var restored = restoreFormState();
+  syncRouteSearchLabel();
 
   if (!restored) {
     /* First ever load — apply factory defaults */
