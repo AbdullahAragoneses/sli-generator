@@ -179,7 +179,10 @@
       </div>
       <div>
         <label>Time</label>
-        <input type="time" id="f-time" oninput="render()" />
+        <div style="display:flex;gap:5px;align-items:center">
+          <input type="time" id="f-time" oninput="saveFormState();render()" style="flex:1" />
+          <button type="button" onclick="setTimeNow()" style="padding:6px 10px;font-size:11px;border:1px solid #ccc;border-radius:5px;background:#f0f0f0;cursor:pointer;white-space:nowrap">Now</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1275,9 +1278,14 @@ function renderSLI() {
   footerBlock();
 }
 
-function render() {
+function setTimeNow() {
   var now = new Date();
   document.getElementById('f-time').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  saveFormState();
+  render();
+}
+
+function render() {
   document.getElementById('sli-document').innerHTML = renderSLI();
   generateEmail();
   saveFormState();
