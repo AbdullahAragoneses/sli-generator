@@ -712,7 +712,7 @@ var PRODUCTS = [
 ];
 
 /* ══ STATE ═════════════════════════════════════════════════════════════════ */
-var invoiceNum = parseInt(localStorage.getItem('sli_inv') || '10153');
+var invoiceNum = parseInt(localStorage.getItem('sli_inv') || '10162');
 
 /* ══ INIT ══════════════════════════════════════════════════════════════════ */
 window.onload = function() {
@@ -753,7 +753,7 @@ window.onload = function() {
   var goodsEl = document.getElementById('f-goods');
   if (goodsEl) autoExpand(goodsEl);
 
-  updateInvoiceDisplay();
+  fetchInvoiceFromGitHub();
   fetchPrices();
   render();
 };
@@ -838,6 +838,55 @@ function set(id, v) {
 }
 
 /* ══ INVOICE ═══════════════════════════════════════════════════════════════ */
+var _WORKER_URL  = 'https://sli-counter.abdelah-aragoneses.workers.dev';
+var _confirmedNum = null;
+
+function fetchInvoiceFromGitHub() {
+  var badge  = document.getElementById('invoice-display');
+  var topInv = document.getElementById('top-inv');
+  badge.textContent  = 'Syncing…';
+  topInv.textContent = 'Syncing…';
+
+  fetch(_WORKER_URL)
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    invoiceNum    = data.next;
+    _confirmedNum = data.next;
+    localStorage.setItem('sli_inv', invoiceNum);
+    badge.style.border = '';
+    badge.title        = '';
+    updateInvoiceDisplay();
+    render();
+  })
+  .catch(function() {
+    invoiceNum    = parseInt(localStorage.getItem('sli_inv') || '10162');
+    _confirmedNum = null;
+    badge.style.border = '2px solid #e05050';
+    badge.title        = 'Could not sync with server — using last known local number.';
+    updateInvoiceDisplay();
+    render();
+  });
+}
+
+function pushInvoiceToGitHub(newNum, onSuccess, onConflict) {
+  if (_confirmedNum === null) { onSuccess(); return; }
+  fetch(_WORKER_URL, {
+    method:  'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify({expected: _confirmedNum, next: newNum})
+  })
+  .then(function(r) {
+    if (r.status === 409) {
+      return r.json().then(function() { onConflict(); });
+    }
+    return r.json().then(function(d) {
+      _confirmedNum = d.next;
+      onSuccess();
+    });
+  })
+  .catch(function() { onSuccess(); });
+}
+
 function updateInvoiceDisplay() {
   var inv = 'GLD' + invoiceNum;
   document.getElementById('invoice-display').textContent = inv;
@@ -1409,10 +1458,18 @@ function printSLI() {
         'Cancel → stay on GLD' + invoiceNum
       );
       if (ok) {
-        invoiceNum = next;
-        localStorage.setItem('sli_inv', invoiceNum);
-        updateInvoiceDisplay();
-        render();
+        pushInvoiceToGitHub(next,
+          function() {
+            invoiceNum = next;
+            localStorage.setItem('sli_inv', invoiceNum);
+            updateInvoiceDisplay();
+            render();
+          },
+          function() {
+            alert('Another user issued an invoice at the same time.\nFetching the latest number now — please wait a moment, then print again.');
+            fetchInvoiceFromGitHub();
+          }
+        );
       }
     }, 800);
   }, 250);
