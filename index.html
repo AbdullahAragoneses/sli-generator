@@ -1423,8 +1423,22 @@ function openInOutlook() {
 }
 
 function copyEmail() {
-  var text = document.getElementById('email-body').innerText;
-  navigator.clipboard.writeText(text);
+  var bodyEl    = document.getElementById('email-body');
+  var htmlBody  = bodyEl.innerHTML;
+  var plainBody = bodyEl.innerText;
+
+  /* Copy rich HTML too, so Ctrl+V into Outlook/Gmail/Word keeps the bold labels */
+  try {
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html':  new Blob([htmlBody],  { type: 'text/html' }),
+        'text/plain': new Blob([plainBody], { type: 'text/plain' })
+      })
+    ]);
+  } catch(e) {
+    navigator.clipboard.writeText(plainBody);
+  }
+
   var c = document.getElementById('copy-confirm');
   c.style.display = 'inline';
   setTimeout(function(){ c.style.display = 'none'; }, 2000);
