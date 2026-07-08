@@ -139,6 +139,7 @@
           <option value="bfv-to-scoin">Brinks BFV → SCOIN Sandown</option>
           <option value="cpt-to-scoin">Cape Town → SCOIN Sandown</option>
           <option value="rrl-to-bfv">Rand Refinery → Brinks BFV</option>
+          <option value="rrl-to-cpt">Rand Refinery → Cape Town (Brickfield)</option>
           <option value="metcon-to-sez">Metcon → Brinks SEZ</option>
           <option value="metcon-to-bfv">Metcon → Brinks BFV</option>
           <option value="perth-mint-to-bfv">Perth Mint → Brinks BFV</option>
@@ -280,6 +281,14 @@
   <!-- ── Collection Details ── -->
   <div class="card">
     <h2>Collection Details <span style="color:#aaa;font-weight:normal;font-size:11px">(auto-filled — edit if needed)</span></h2>
+    <div class="fg fg1">
+      <div>
+        <label>Or pick a known location</label>
+        <select id="f-coll-loc-picker" onchange="applyLocation('coll', this.value)">
+          <option value="">— Select a location —</option>
+        </select>
+      </div>
+    </div>
     <div class="fg fg2">
       <div>
         <label>Collection Location Name</label>
@@ -309,6 +318,14 @@
   <!-- ── Delivery Details ── -->
   <div class="card">
     <h2>Delivery Details <span style="color:#aaa;font-weight:normal;font-size:11px">(auto-filled — edit if needed)</span></h2>
+    <div class="fg fg1">
+      <div>
+        <label>Or pick a known location</label>
+        <select id="f-deliv-loc-picker" onchange="applyLocation('deliv', this.value)">
+          <option value="">— Select a location —</option>
+        </select>
+      </div>
+    </div>
     <div class="fg fg2">
       <div>
         <label>Delivery Location Name</label>
@@ -445,6 +462,14 @@ var ROUTES = {
     consignee:'Brinks D&J',
     brinksChg:'prepaid', userChg:'collect',
     responsible:'Abdullah Aragoneses', collContact:'', delivContact:'Sophy — 082 897 7591'
+  },
+  'rrl-to-cpt':{
+    label:'Rand Refinery → Cape Town (Brickfield)',
+    coll:{ name:'Rand Refinery', addr:'1 Refinery Rd\nEast Rand Pty Mines\nGermiston, 1400' },
+    deliv:{ name:'SA Bullion Cape Town', addr:'First Floor, Brickfield Canvas\n35 Brickfield Road\nWoodstock, Cape Town, 7925' },
+    consignee:'SA Bullion Investor Services',
+    brinksChg:'prepaid', userChg:'collect',
+    responsible:'Abdullah Aragoneses', collContact:'Khangwelo Masia — 011 418 9117 / 011 418 9000', delivContact:'Abdullah Aragoneses — 060 587 3305'
   },
   'sez-to-bfv':{
     label:'Brinks SEZ → Brinks BFV',
@@ -594,7 +619,7 @@ var ROUTES = {
   'custom':{
     label:'Custom / Other',
     coll:{ name:'', addr:'' }, deliv:{ name:'', addr:'' },
-    consignee:'',
+    consignee:'SA Bullion',
     brinksChg:'prepaid', userChg:'collect',
     responsible:'Abdullah Aragoneses', collContact:'', delivContact:''
   }
@@ -604,7 +629,7 @@ var ROUTES = {
 var ROUTE_ORDER = [
   'cpt-to-bfv','bfv-to-cpt','brinks-to-vp','vp-to-bfv',
   'sez-to-bfv','bfv-to-sez','sa-mint-to-bfv','bfv-to-scoin',
-  'cpt-to-scoin','rrl-to-bfv','metcon-to-sez','metcon-to-bfv',
+  'cpt-to-scoin','rrl-to-bfv','rrl-to-cpt','metcon-to-sez','metcon-to-bfv',
   'perth-mint-to-bfv','ferrari-to-bfv','reserve-to-bfv',
   'union-vault-to-bfv','bfv-to-union-vault','bfv-to-metcon',
   'sabis-to-mgmt','bfv-mgmt-to-sabis','sez-mgmt-to-sabis',
@@ -692,6 +717,29 @@ var CONTACTS = [
   { name:'Patrick Georgiades', phone:'079 368 6084', loc:'Union Vault, Pretoria' },
 ];
 
+/* ══ KNOWN LOCATIONS (for the collection/delivery "pick a location" dropdowns) ══ */
+var LOCATIONS = {
+  'brinks-bfv':      { name:'Brinks Global Services',                          addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+  'vault-prive':     { name:'SA Bullion Vault Privé',                          addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+  'cpt':             { name:'SA Bullion Cape Town',                           addr:'First Floor, Brickfield Canvas\n35 Brickfield Road\nWoodstock, Cape Town, 7925' },
+  'rand-refinery':   { name:'Rand Refinery',                                   addr:'1 Refinery Rd\nEast Rand Pty Mines\nGermiston, 1400' },
+  'brinks-sez':      { name:'Brinks SEZ',                                      addr:'Bonaero Park, Kempton Park\nOR Tambo International Airport SEZ' },
+  'metcon':          { name:'Metcon',                                          addr:'ACSA Precinct, Precinct 1\nBonaero Drive 38, Kempton Park' },
+  'sa-mint':         { name:'The South African Mint',                         addr:'Old Johannesburg Rd, Gateway\nCenturion, 1683' },
+  'perth-mint':      { name:'The Perth Mint',                                  addr:'310 Hay Street, East Perth\nWA 6004, Australia' },
+  'reserve-holdings':{ name:'Reserve Holdings',                                addr:'1 Dover House\nOrange Street, Cape Town, 8001' },
+  'ferrari':         { name:'Ferrari (The Paragon)',                          addr:'The Paragon, 1 Kramer Rd\nBedfordview, Germiston, 2008' },
+  'scoin':           { name:'SCOIN — South African Gold Coin Exchange',       addr:'South African Gold Coin Exchange\n129 Rivonia Rd, The Marc Tower 2\nFloor 12, Sandown' },
+  'sabis-account':   { name:'SA BULLION INVESTOR SERVICES — Account 57403',   addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
+  'mgmt-account':    { name:'SA Management Account — Account 59646',          addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
+  'union-vault':     { name:'Union Vault',                                    addr:'176 Bronkhorst Street\nNieuw Muckleneuk\nPretoria, Gauteng, 0181' }
+};
+var LOCATION_ORDER = [
+  'brinks-bfv','vault-prive','cpt','rand-refinery','brinks-sez','metcon',
+  'sa-mint','perth-mint','reserve-holdings','ferrari','scoin',
+  'sabis-account','mgmt-account','union-vault'
+];
+
 var PRODUCTS = [
   '20000 x 1oz Silver Philharmonic (40 x Monster Boxes)',
   '15000 x 1oz Silver Krugerrand (30 x Monster Boxes)',
@@ -734,19 +782,30 @@ window.onload = function() {
     var o = document.createElement('option'); o.value = p; pl.appendChild(o);
   });
 
+  var collPicker  = document.getElementById('f-coll-loc-picker');
+  var delivPicker = document.getElementById('f-deliv-loc-picker');
+  LOCATION_ORDER.forEach(function(key) {
+    var loc = LOCATIONS[key];
+    var o1 = document.createElement('option'); o1.value = key; o1.textContent = loc.name; collPicker.appendChild(o1);
+    var o2 = document.createElement('option'); o2.value = key; o2.textContent = loc.name; delivPicker.appendChild(o2);
+  });
+
   var restored = restoreFormState();
   syncRouteSearchLabel();
 
+  /* SLI Date & Time always default to right now on open — never restored from a
+     previous session. User can still type a different value once the page is open. */
+  var t  = new Date();
+  var d  = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
+  var ti = pad(t.getHours()) + ':' + pad(t.getMinutes());
+  document.getElementById('f-date').value = d;
+  document.getElementById('f-time').value = ti;
+
   if (!restored) {
     /* First ever load — apply factory defaults */
-    var t  = new Date();
-    var d  = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
-    var ti = pad(t.getHours()) + ':' + pad(t.getMinutes());
-    ['f-date', 'f-deliv-date', 'f-coll-date'].forEach(function(id) {
-      document.getElementById(id).value = d;
-    });
-    document.getElementById('f-time').value = ti;
-    document.getElementById('f-coll-time').value = ti;
+    document.getElementById('f-deliv-date').value = d;
+    document.getElementById('f-coll-date').value  = d;
+    document.getElementById('f-coll-time').value  = ti;
     set('f-sealed', '');
     set('f-marks',  'N/A');
     set('f-pieces', 'N/A');
@@ -770,7 +829,7 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 /* ══ FORM STATE PERSISTENCE ════════════════════════════════════════════════ */
 var FORM_FIELDS = [
-  'f-route','f-shipper','f-date','f-time','f-value','f-goods','f-weight','f-pieces',
+  'f-shipper','f-value','f-goods','f-weight','f-pieces',
   'f-marks','f-sealed','f-coll-name','f-coll-addr','f-coll-date','f-coll-time',
   'f-coll-contact','f-deliv-name','f-deliv-addr','f-deliv-contact','f-deliv-date',
   'f-deliv-time','f-responsible','f-brinks-charge','f-user-charge','f-consignee','f-special'
@@ -801,7 +860,7 @@ function restoreFormState() {
 }
 
 /* ══ ROUTE CHANGE ══════════════════════════════════════════════════════════ */
-var CPT_ROUTES = ['cpt-to-bfv','bfv-to-cpt','cpt-to-scoin'];
+var CPT_ROUTES = ['cpt-to-bfv','bfv-to-cpt','cpt-to-scoin','rrl-to-cpt'];
 
 function syncDeliveryDate() {
   var collDateStr = document.getElementById('f-coll-date').value;
@@ -838,6 +897,20 @@ function onRouteChange() {
 function set(id, v) {
   var e = document.getElementById(id);
   if (e) e.value = v || '';
+}
+
+/* ══ KNOWN LOCATION PICKER (collection/delivery) ═══════════════════════════ */
+function applyLocation(which, key) {
+  var loc = LOCATIONS[key];
+  if (!loc) return;
+  if (which === 'coll') {
+    set('f-coll-name', loc.name);
+    set('f-coll-addr', loc.addr);
+  } else {
+    set('f-deliv-name', loc.name);
+    set('f-deliv-addr', loc.addr);
+  }
+  render();
 }
 
 /* ══ INVOICE ═══════════════════════════════════════════════════════════════ */
