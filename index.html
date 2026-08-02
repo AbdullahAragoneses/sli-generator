@@ -5,56 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SLI Generator — SA Bullion</title>
 <meta name="version" content="2026-06-24-v5">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
+:root {
+  /* SA Bullion Brand — Tyrian Purple (shared palette, matches Proof Dashboard / Family Fund) */
+  --purple-90: #2F1944; --purple-80: #332045; --purple-70: #432C59;
+  --purple-60: #4B1D75; --purple-50: #7A549E; --purple-40: #8A5FB3;
+  --purple-30: #A581C7; --purple-20: #D7CAE3; --purple-10: #EEE9F2;
+  /* Satin Gold */
+  --gold-90: #594012; --gold-80: #664D1E; --gold-70: #7A5E28;
+  --gold-60: #96670E; --gold-50: #BF9447; --gold-40: #D4A755;
+  --gold-30: #F5C469; --gold-20: #FFE7BA; --gold-10: #F2EADA;
+  --gold-light: #F5C469;
+  /* Midnight Blue */
+  --blue-90: #121338; --blue-80: #1C1E45; --blue-70: #272959;
+  --black: #121338; --charcoal: #2F1944; --dark: #332045; --mid: #432C59;
+  --light: #F2EADA; --white: #FFFBF2;
+  --border: rgba(122,84,158,0.25); --border-strong: rgba(122,84,158,0.55);
+  --ok: #6FBF8A; --warn: #D4915A; --err: #D46A6A;
+  --font-head: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+}
+:root[data-theme="light"] {
+  --black: #FAF7FC; --charcoal: #F0EAF7; --dark: #FFFFFF; --mid: #F2EADA;
+  --light: #2F1944; --purple-30: #6B4E85;
+  --border: rgba(122,84,158,0.2); --border-strong: rgba(122,84,158,0.4);
+}
 @media screen {
   * { box-sizing: border-box; }
-  body { margin:0; padding:0; background:#eef0f5; font-family:Arial,sans-serif; font-size:13px; color:#222; }
-  #topbar { background:#1a1a2e; color:white; padding:13px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:200; box-shadow:0 2px 10px rgba(0,0,0,.4); }
-  #topbar h1 { margin:0; font-size:16px; color:#f0c060; }
-  #topbar p  { margin:0; font-size:11px; color:#aaa; }
+  body { margin:0; padding:0; background:var(--black); font-family:var(--font-body); font-size:13px; color:var(--light); transition:background .15s,color .15s; }
+  #topbar { background:linear-gradient(160deg, var(--purple-90) 0%, var(--blue-90) 60%, var(--purple-80) 100%); color:var(--white); padding:13px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; position:sticky; top:0; z-index:200; box-shadow:0 2px 10px rgba(0,0,0,.4); border-bottom:1px solid var(--border-strong); }
+  #topbar h1 { margin:0; font-family:var(--font-display); font-size:17px; color:var(--gold-light); }
+  #topbar p  { margin:0; font-size:11px; color:var(--purple-30); }
+  #topbar-right { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+  .theme-toggle-btn { background:var(--dark); border:1px solid var(--border-strong); color:var(--gold-light); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0; }
+  .theme-toggle-btn:hover { border-color:var(--gold-40); }
   #form-panel { max-width:940px; margin:18px auto; padding:0 12px; }
-  .card { background:white; border-radius:8px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 5px rgba(0,0,0,.08); }
-  .card h2 { margin:0 0 13px 0; font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#1a1a2e; border-bottom:2px solid #1a1a2e; padding-bottom:6px; }
-  .card-calc { border:2px solid #f0c060; background:#fffdf5; }
-  .card-calc h2 { color:#8a6800; border-color:#f0c060; }
+  .card { background:var(--dark); border:1px solid var(--border); border-radius:8px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 5px rgba(0,0,0,.16); }
+  .card h2 { margin:0 0 13px 0; font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--gold-light); border-bottom:2px solid var(--border-strong); padding-bottom:6px; font-family:var(--font-head); }
+  .card-calc { border:1px solid var(--gold-40); background:linear-gradient(160deg, rgba(212,167,85,.1), transparent 60%); }
+  .card-calc h2 { color:var(--gold-light); border-color:var(--gold-40); }
   .fg { display:grid; gap:11px; margin-bottom:11px; }
   .fg2 { grid-template-columns:1fr 1fr; }
   .fg3 { grid-template-columns:1fr 1fr 1fr; }
   .fg4 { grid-template-columns:1fr 1fr 1fr 1fr; }
   .fg1 { grid-template-columns:1fr; }
-  label { display:block; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:.5px; color:#666; margin-bottom:3px; }
-  input[type=text], input[type=date], input[type=time], select, textarea { width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:5px; font-size:13px; font-family:Arial,sans-serif; color:#222; background:#fafafa; transition:border-color .15s; }
-  input:focus, select:focus, textarea:focus { outline:none; border-color:#1a1a2e; background:white; }
+  label { display:block; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:.5px; color:var(--purple-30); margin-bottom:3px; }
+  input[type=text], input[type=date], input[type=time], select, textarea { width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:5px; font-size:13px; font-family:var(--font-body); color:var(--light); background:var(--charcoal); transition:border-color .15s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--gold-40); }
   textarea { resize:vertical; min-height:52px; }
   select { cursor:pointer; }
-  .route-select { font-size:14px; font-weight:bold; padding:10px 12px; background:#fff8e8; border:2px solid #f0c060; cursor:pointer; }
-  .input-manual { background:#fffbea !important; border-color:#ddc84a !important; }
-  .invoice-badge { background:#fff8e8; border:2px solid #f0c060; border-radius:6px; padding:7px 12px; font-size:20px; font-weight:bold; color:#1a1a2e; letter-spacing:2px; display:block; text-align:center; }
+  .route-select { font-size:14px; font-weight:bold; padding:10px 12px; background:rgba(212,167,85,.08); border:2px solid var(--gold-40); cursor:pointer; }
+  .input-manual { background:rgba(212,167,85,.12) !important; border-color:var(--gold-40) !important; }
+  .invoice-badge { background:rgba(212,167,85,.1); border:2px solid var(--gold-40); border-radius:6px; padding:7px 12px; font-size:20px; font-weight:bold; color:var(--gold-light); letter-spacing:2px; display:block; text-align:center; font-family:var(--font-display); }
   .inv-btns { display:flex; gap:5px; margin-top:5px; }
-  .inv-btn { flex:1; padding:5px; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:11px; background:#f0f0f0; }
-  .inv-btn:hover { background:#ddd; }
-  .autofill-note { font-size:10px; color:#aaa; font-style:italic; margin-top:2px; }
-  .btn-print { background:#1a1a2e; color:#f0c060; border:none; padding:13px 30px; font-size:14px; font-weight:bold; cursor:pointer; border-radius:6px; }
-  .btn-print:hover { background:#2d2d5e; }
+  .inv-btn { flex:1; padding:5px; border:1px solid var(--border-strong); border-radius:4px; cursor:pointer; font-size:11px; background:var(--charcoal); color:var(--light); }
+  .inv-btn:hover { border-color:var(--gold-40); color:var(--gold-light); }
+  .autofill-note { font-size:10px; color:var(--purple-30); font-style:italic; margin-top:2px; }
+  .btn-print { background:linear-gradient(160deg, var(--gold-40), var(--gold-70)); color:var(--purple-90); border:none; padding:13px 30px; font-size:14px; font-weight:bold; cursor:pointer; border-radius:6px; font-family:var(--font-head); letter-spacing:.03em; }
+  .btn-print:hover { filter:brightness(1.08); }
   #preview-wrapper { max-width:940px; margin:0 auto 40px auto; padding:0 12px; }
-  .preview-label { background:#ddd; color:#555; font-size:10px; text-align:center; padding:5px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; }
-  #sli-document { background:white; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.12); border-radius:0 0 4px 4px; }
+  .preview-label { background:var(--charcoal); color:var(--purple-30); font-size:10px; text-align:center; padding:5px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; }
+  #sli-document { background:white; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.35); border-radius:0 0 4px 4px; }
   /* Value calculator */
-  .calc-price-box { padding:8px 10px; border:1px solid #e5cc88; border-radius:5px; background:#fff8e8; font-size:13px; color:#444; min-height:36px; }
-  .calc-result-box { padding:10px 12px; border:2px solid #f0c060; border-radius:5px; background:#fff3cc; font-size:18px; font-weight:bold; color:#1a1a2e; min-height:44px; }
-  .btn-apply { width:100%; padding:11px 14px; background:#1a1a2e; color:#f0c060; border:none; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; }
-  .btn-apply:hover { background:#2d2d5e; }
-  .calc-status { font-size:11px; margin-bottom:12px; padding:6px 10px; border-radius:4px; background:#f5f5f5; }
+  .calc-price-box { padding:8px 10px; border:1px solid var(--border-strong); border-radius:5px; background:var(--charcoal); font-size:13px; color:var(--light); min-height:36px; }
+  .calc-result-box { padding:10px 12px; border:2px solid var(--gold-40); border-radius:5px; background:rgba(212,167,85,.14); font-size:18px; font-weight:bold; color:var(--gold-light); min-height:44px; font-family:var(--font-display); }
+  .btn-apply { width:100%; padding:11px 14px; background:linear-gradient(160deg, var(--gold-40), var(--gold-70)); color:var(--purple-90); border:none; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; font-family:var(--font-head); }
+  .btn-apply:hover { filter:brightness(1.08); }
+  .calc-status { font-size:11px; margin-bottom:12px; padding:6px 10px; border-radius:4px; background:var(--charcoal); color:var(--purple-30); }
   /* Email summary panel */
   #email-wrapper { max-width:940px; margin:0 auto 40px auto; padding:0 12px; }
-  .email-label { background:#1a1a2e; color:#f0c060; font-size:10px; text-align:center; padding:6px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; font-weight:bold; }
-  .email-panel { background:white; padding:18px 22px; box-shadow:0 2px 12px rgba(0,0,0,.12); border-radius:0 0 4px 4px; }
-  .email-subj { font-size:11px; font-weight:bold; text-transform:uppercase; color:#666; letter-spacing:.5px; margin-bottom:4px; }
-  .email-subj-val { font-size:14px; font-weight:bold; color:#1a1a2e; background:#f5f5f5; padding:7px 12px; border-radius:4px; margin-bottom:14px; letter-spacing:.3px; }
-  #email-body { width:100%; min-height:280px; font-family:Arial,sans-serif; font-size:13px; line-height:1.7; color:#222; border:1px solid #ddd; border-radius:5px; padding:14px; background:#fafffe; resize:vertical; }
-  .btn-copy { background:#1a1a2e; color:#f0c060; border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
-  .btn-copy:hover { background:#2d2d5e; }
-  .copy-confirm { font-size:11px; color:#2a9d2a; margin-left:10px; display:none; }
+  .email-label { background:var(--purple-60); color:var(--white); font-size:10px; text-align:center; padding:6px; border-radius:4px 4px 0 0; letter-spacing:1px; text-transform:uppercase; font-weight:bold; }
+  .email-panel { background:var(--dark); border:1px solid var(--border); padding:18px 22px; box-shadow:0 2px 12px rgba(0,0,0,.16); border-radius:0 0 4px 4px; }
+  .email-subj { font-size:11px; font-weight:bold; text-transform:uppercase; color:var(--purple-30); letter-spacing:.5px; margin-bottom:4px; }
+  .email-subj-val { font-size:14px; font-weight:bold; color:var(--gold-light); background:var(--charcoal); padding:7px 12px; border-radius:4px; margin-bottom:14px; letter-spacing:.3px; }
+  #email-body { width:100%; min-height:280px; font-family:var(--font-body); font-size:13px; line-height:1.7; color:var(--light); border:1px solid var(--border-strong); border-radius:5px; padding:14px; background:var(--charcoal); resize:vertical; }
+  .btn-copy { background:var(--purple-60); color:var(--white); border:none; padding:10px 24px; font-size:13px; font-weight:bold; cursor:pointer; border-radius:5px; margin-top:10px; }
+  .btn-copy:hover { background:var(--purple-50); }
+  .copy-confirm { font-size:11px; color:var(--ok); margin-left:10px; display:none; }
 }
 
 @media print {
@@ -107,7 +136,10 @@
 
 <div id="topbar">
   <div><h1>SA Bullion — SLI Generator</h1><p>Select route → fill goods → Generate &amp; Print → Save as PDF</p></div>
-  <div style="font-size:11px;color:#aaa;text-align:right">Next invoice: <strong id="top-inv" style="color:#f0c060">GLD10153</strong></div>
+  <div id="topbar-right">
+    <div style="font-size:11px;color:var(--purple-30);text-align:right">Next invoice: <strong id="top-inv" style="color:var(--gold-light)">GLD10153</strong></div>
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+  </div>
 </div>
 
 <div id="form-panel">
@@ -125,7 +157,7 @@
             onclick="routeSearch(this.value)"
             onkeydown="routeKeyNav(event)"
             onblur="setTimeout(function(){document.getElementById('f-route-list').style.display='none'},200)" />
-          <div id="f-route-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:white;border:2px solid #f0c060;border-top:none;border-radius:0 0 6px 6px;z-index:999;box-shadow:0 6px 14px rgba(0,0,0,.15)"></div>
+          <div id="f-route-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:var(--dark);border:2px solid var(--gold-40);border-top:none;border-radius:0 0 6px 6px;z-index:999;box-shadow:0 6px 14px rgba(0,0,0,.35)"></div>
         </div>
         <select id="f-route" style="display:none" onchange="onRouteChange()">
           <option value="">— Select a route —</option>
@@ -429,6 +461,18 @@
 </div>
 
 <script>
+/* ══ THEME ═════════════════════════════════════════════════════════════════ */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-toggle-btn').textContent = theme === 'light' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  localStorage.setItem('sli-generator-theme', next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem('sli-generator-theme') || 'dark');
+
 /* ══ ROUTE DATA ════════════════════════════════════════════════════════════ */
 var ROUTES = {
   'brinks-to-vp':{
@@ -648,13 +692,13 @@ function routeSearch(q) {
     return ROUTES[k] && (!lower || ROUTES[k].label.toLowerCase().indexOf(lower) >= 0);
   });
   if (!matched.length) {
-    list.innerHTML = '<div style="padding:9px 13px;color:#999;font-style:italic;font-size:12px">No routes match</div>';
+    list.innerHTML = '<div style="padding:9px 13px;color:var(--purple-30);font-style:italic;font-size:12px">No routes match</div>';
     return;
   }
   matched.forEach(function(k) {
     var d = document.createElement('div');
     d.textContent = ROUTES[k].label;
-    d.style.cssText = 'padding:9px 13px;cursor:pointer;font-size:13px;color:#222;border-bottom:1px solid #f5f0e0;';
+    d.style.cssText = 'padding:9px 13px;cursor:pointer;font-size:13px;color:var(--light);border-bottom:1px solid var(--border);';
     d.onmouseover = function() { routeHighlight = Array.prototype.indexOf.call(list.children, d); routeUpdateHighlight(); };
     d.onmouseout  = function() { d.style.background = ''; };
     d.onmousedown = function() { routeSelect(k); };
@@ -665,7 +709,7 @@ function routeSearch(q) {
 function routeUpdateHighlight() {
   var list = document.getElementById('f-route-list');
   Array.prototype.forEach.call(list.children, function(d, i) {
-    d.style.background = i === routeHighlight ? '#fff8e8' : '';
+    d.style.background = i === routeHighlight ? 'rgba(212,167,85,.12)' : '';
     if (i === routeHighlight) d.scrollIntoView({ block: 'nearest' });
   });
 }
@@ -937,7 +981,7 @@ function fetchInvoiceFromGitHub() {
   .catch(function() {
     invoiceNum    = parseInt(localStorage.getItem('sli_inv') || '10162');
     _confirmedNum = null;
-    badge.style.border = '2px solid #e05050';
+    badge.style.border = '2px solid var(--err)';
     badge.title        = 'Could not sync with server — using last known local number.';
     updateInvoiceDisplay();
     render();
@@ -1031,7 +1075,7 @@ function startPriceCountdown() {
 function fetchPrices() {
   var statusEl = document.getElementById('calc-status');
   statusEl.textContent = 'Fetching live spot prices...';
-  statusEl.style.color = '#888';
+  statusEl.style.color = 'var(--purple-30)';
   statusEl.removeAttribute('data-base');
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
 
@@ -1043,7 +1087,7 @@ function fetchPrices() {
     var base = 'Gold: R' + fmtNum(goldZAR) + '/oz · Silver: R' + fmtNum(silverZAR) + '/oz — updated ' + ts + ' (' + source + ')';
     statusEl.setAttribute('data-base', base);
     statusEl.textContent = base;
-    statusEl.style.color = '#2a7a2a';
+    statusEl.style.color = 'var(--ok)';
     calcValue();
     startPriceCountdown();
   }
@@ -1068,7 +1112,7 @@ function fetchPrices() {
   })
   .catch(function() {
     statusEl.textContent = 'Price fetch failed — enter gold and silver ZAR spot prices manually above.';
-    statusEl.style.color = '#cc4400';
+    statusEl.style.color = 'var(--err)';
   });
 }
 
@@ -1261,7 +1305,7 @@ function renderSLI() {
   var wt    = get('f-weight') || '';
   var pcs   = get('f-pieces') || '';
   var marks = get('f-marks') || '';
-  var sealed = br(get('f-sealed') || goodsRaw);
+  var sealed = br(get('f-sealed') || '');
   var special = get('f-special') || '';
   var responsible = get('f-responsible') || '';
   var collDate = fmtDate(get('f-coll-date')), collTimeRaw = get('f-coll-time');
@@ -1302,7 +1346,7 @@ function renderSLI() {
         (delivCont ? '<strong>Contact Person:</strong> ' + delivCont + '<br>' : '') +
         (delivDate ? '<strong>Delivery:</strong> ' + delivDate + (delivTimeRaw ? '&nbsp;&nbsp;<strong>Time:</strong> ' + delivTimeRaw + 'h' : '') : '') +
         '<hr class="divider">' +
-        'Sealed packages said to contain;<br><strong>' + sealed + '</strong>' +
+        'Description of Goods:<br><strong>' + goods + '</strong>' +
       '</td>' +
       '<td class="col-r main-cell">' + rightCol + '</td>' +
     '</tr>' +
@@ -1310,8 +1354,8 @@ function renderSLI() {
     '<tr>' +
       '<td colspan="2" class="qty-outer"><table class="qty-inner"><tr>' +
         '<td style="width:30%">' +
-          '<div class="qty-hdr">Quantity ( troz, Carats etc.)</div>' +
-          '<div class="qty-val">' + goods + '</div>' +
+          '<div class="qty-hdr">Sealed Packages Said to Contain</div>' +
+          '<div class="qty-val">' + sealed + '</div>' +
         '</td>' +
         '<td style="width:12%">' +
           '<div class="qty-hdr">Number of Pieces</div>' +
