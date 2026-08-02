@@ -3,6 +3,26 @@
 
 ---
 
+## Current Status (2026-08-02)
+The tool described below as "still to do" has since been built and is **live and in daily use**:
+- **Live at:** https://abdullaharagoneses.github.io/sli-generator/ (GitHub Pages, repo
+  `AbdullahAragoneses/sli-generator`)
+- **Source:** `index.html` — a single self-contained HTML/JS file, no build step. Route data,
+  contacts, locations, and products are all hardcoded in the `<script>` block.
+- Reskinned 2026-08-02 to match the SA Bullion brand system used by the other dashboards
+  (Tyrian Purple/Satin Gold, Playfair Display, light/dark toggle) — aesthetics only, same fields
+  and logic.
+- **Invoice counter:** synced across everyone via a Cloudflare Worker
+  (`sli-counter.abdelah-aragoneses.workers.dev`). The Worker's source lives at
+  `worker\sli-counter-worker.js` in this project — it was rewritten from scratch 2026-08-02 to
+  fix a CORS bug (missing `Access-Control-Allow-Headers` on the preflight response) that made
+  every "advance to next invoice" push silently fail, so the shared number kept resetting to
+  GLD10162 on reload. See that file's header comment for the full contract and deploy notes —
+  **the KV counter must be seeded to the real current highest invoice number before relying on
+  it**, since invoices may have already been issued past 10162 while the bug was live.
+
+---
+
 ## What This Project Is
 - Processing Shipper's Letters of Instruction (SLIs) for SA Bullion Investor Services
 - Authorises Brink's (SA) to transport precious metal coin/bullion shipments
