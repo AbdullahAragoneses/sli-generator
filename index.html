@@ -394,6 +394,7 @@
           <option value="">— Select —</option>
           <option value="Abdullah Aragoneses">Abdullah Aragoneses</option>
           <option value="Angelique Render">Angelique Render</option>
+          <option value="Zubayr Abdullatief">Zubayr Abdullatief</option>
         </select>
       </div>
       <div>
@@ -1242,6 +1243,9 @@ function getSigHtml(responsible) {
   }
   if (n.indexOf('angelique') >= 0 || n.indexOf('angie') >= 0) {
     return '<img src="./logos/sig_angie.png" style="height:45px;max-width:160px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
+  }
+  if (n.indexOf('zubayr') >= 0) {
+    return '<img src="./logos/sig_zubayr.png" style="height:50px;max-width:180px;display:inline-block;vertical-align:middle;margin-left:4px" onerror="this.style.display=\'none\'">';
   }
   return '';
 }
