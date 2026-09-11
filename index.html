@@ -8,29 +8,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* SA Bullion Brand — Tyrian Purple (shared palette, matches Proof Dashboard / Family Fund) */
-  --purple-90: #2F1944; --purple-80: #332045; --purple-70: #432C59;
-  --purple-60: #4B1D75; --purple-50: #7A549E; --purple-40: #8A5FB3;
-  --purple-30: #A581C7; --purple-20: #D7CAE3; --purple-10: #EEE9F2;
-  /* Satin Gold */
-  --gold-90: #594012; --gold-80: #664D1E; --gold-70: #7A5E28;
-  --gold-60: #96670E; --gold-50: #BF9447; --gold-40: #D4A755;
-  --gold-30: #F5C469; --gold-20: #FFE7BA; --gold-10: #F2EADA;
-  --gold-light: #F5C469;
-  /* Midnight Blue */
-  --blue-90: #121338; --blue-80: #1C1E45; --blue-70: #272959;
-  --black: #121338; --charcoal: #2F1944; --dark: #332045; --mid: #432C59;
-  --light: #F2EADA; --white: #FFFBF2;
-  --border: rgba(122,84,158,0.25); --border-strong: rgba(122,84,158,0.55);
-  --ok: #6FBF8A; --warn: #D4915A; --err: #D46A6A;
-  --font-head: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-body: Arial, Helvetica, sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+  /* Inventory Dashboard shared theme — Tailwind gray + blue, nothing else (applied 2026-09-11).
+     Same variable names as before so every component picks the colours up automatically.
+     DARK is the default block; LIGHT overrides below. */
+  --purple-90: #030712; --purple-80: #111827; --purple-70: #1F2937;
+  --purple-60: #16587B; --purple-50: #16587B; --purple-40: #84B3CE;
+  --purple-30: #9CA3AF; --purple-20: #D1D5DB; --purple-10: #F3F4F6;
+  --gold-90: #124A68; --gold-80: #124A68; --gold-70: #16587B;
+  --gold-60: #16587B; --gold-50: #16587B; --gold-40: #16587B;
+  --gold-30: #84B3CE; --gold-20: #374151; --gold-10: #1F2937;
+  --blue-90: #030712; --blue-80: #111827; --blue-70: #1F2937;
+  --black-80: #1F2937;
+  --gold: #84B3CE; --gold-light: #F3F4F6; --gold-pale: #1F2937; --gold-dark: #124A68;
+  --black: #030712; --charcoal: #111827; --dark: #111827; --mid: #1F2937;
+  --muted: #9CA3AF; --light: #F3F4F6; --white: #FFFFFF;
+  --border: #1F2937; --border-strong: #374151;
+  --ok: #4ADE80; --warn: #FBBF24; --err: #F87171;
+  --font-head: 'Inter', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-body: 'Inter', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Inter', system-ui, 'Segoe UI', Arial, sans-serif;
 }
 :root[data-theme="light"] {
-  --black: #FAF7FC; --charcoal: #F0EAF7; --dark: #FFFFFF; --mid: #F2EADA;
-  --light: #2F1944; --purple-30: #6B4E85;
-  --border: rgba(122,84,158,0.2); --border-strong: rgba(122,84,158,0.4);
+  --purple-90: #F9FAFB; --purple-80: #FFFFFF; --purple-70: #F3F4F6;
+  --purple-30: #4B5563; --purple-20: #374151; --purple-10: #F9FAFB;
+  --gold-20: #E5E7EB; --gold-10: #F3F4F6;
+  --blue-90: #F9FAFB; --blue-80: #FFFFFF; --blue-70: #F3F4F6; --black-80: #F3F4F6;
+  --gold: #16587B; --gold-light: #111827; --gold-pale: #F3F4F6; --gold-dark: #124A68;
+  --black: #F9FAFB; --charcoal: #FFFFFF; --dark: #FFFFFF; --mid: #F3F4F6;
+  --muted: #6B7280; --light: #111827; --white: #FFFFFF;
+  --border: #E5E7EB; --border-strong: #D1D5DB;
+  --ok: #16A34A; --warn: #D97706; --err: #DC2626;
 }
 @media screen {
   * { box-sizing: border-box; }
@@ -44,7 +51,7 @@
   #form-panel { max-width:940px; margin:18px auto; padding:0 12px; }
   .card { background:var(--dark); border:1px solid var(--border); border-radius:8px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 5px rgba(0,0,0,.16); }
   .card h2 { margin:0 0 13px 0; font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--gold-light); border-bottom:2px solid var(--border-strong); padding-bottom:6px; font-family:var(--font-head); }
-  .card-calc { border:1px solid var(--gold-40); background:linear-gradient(160deg, rgba(212,167,85,.1), transparent 60%); }
+  .card-calc { border:1px solid var(--gold-40); background:linear-gradient(160deg, rgba(100,116,139,.1), transparent 60%); }
   .card-calc h2 { color:var(--gold-light); border-color:var(--gold-40); }
   .fg { display:grid; gap:11px; margin-bottom:11px; }
   .fg2 { grid-template-columns:1fr 1fr; }
@@ -56,9 +63,9 @@
   input:focus, select:focus, textarea:focus { outline:none; border-color:var(--gold-40); }
   textarea { resize:vertical; min-height:52px; }
   select { cursor:pointer; }
-  .route-select { font-size:14px; font-weight:bold; padding:10px 12px; background:rgba(212,167,85,.08); border:2px solid var(--gold-40); cursor:pointer; }
-  .input-manual { background:rgba(212,167,85,.12) !important; border-color:var(--gold-40) !important; }
-  .invoice-badge { background:rgba(212,167,85,.1); border:2px solid var(--gold-40); border-radius:6px; padding:7px 12px; font-size:20px; font-weight:bold; color:var(--gold-light); letter-spacing:2px; display:block; text-align:center; font-family:var(--font-display); }
+  .route-select { font-size:14px; font-weight:bold; padding:10px 12px; background:rgba(100,116,139,.08); border:2px solid var(--gold-40); cursor:pointer; }
+  .input-manual { background:rgba(100,116,139,.12) !important; border-color:var(--gold-40) !important; }
+  .invoice-badge { background:rgba(100,116,139,.1); border:2px solid var(--gold-40); border-radius:6px; padding:7px 12px; font-size:20px; font-weight:bold; color:var(--gold-light); letter-spacing:2px; display:block; text-align:center; font-family:var(--font-display); }
   .inv-btns { display:flex; gap:5px; margin-top:5px; }
   .inv-btn { flex:1; padding:5px; border:1px solid var(--border-strong); border-radius:4px; cursor:pointer; font-size:11px; background:var(--charcoal); color:var(--light); }
   .inv-btn:hover { border-color:var(--gold-40); color:var(--gold-light); }
@@ -70,7 +77,7 @@
   #sli-document { background:white; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.35); border-radius:0 0 4px 4px; }
   /* Value calculator */
   .calc-price-box { padding:8px 10px; border:1px solid var(--border-strong); border-radius:5px; background:var(--charcoal); font-size:13px; color:var(--light); min-height:36px; }
-  .calc-result-box { padding:10px 12px; border:2px solid var(--gold-40); border-radius:5px; background:rgba(212,167,85,.14); font-size:18px; font-weight:bold; color:var(--gold-light); min-height:44px; font-family:var(--font-display); }
+  .calc-result-box { padding:10px 12px; border:2px solid var(--gold-40); border-radius:5px; background:rgba(100,116,139,.14); font-size:18px; font-weight:bold; color:var(--gold-light); min-height:44px; font-family:var(--font-display); }
   .btn-apply { width:100%; padding:11px 14px; background:linear-gradient(160deg, var(--gold-40), var(--gold-70)); color:var(--purple-90); border:none; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; font-family:var(--font-head); }
   .btn-apply:hover { filter:brightness(1.08); }
   .calc-status { font-size:11px; margin-bottom:12px; padding:6px 10px; border-radius:4px; background:var(--charcoal); color:var(--purple-30); }
@@ -130,7 +137,14 @@
 .field-lbl { font-weight:bold; font-size:8pt; }
 .u { text-decoration:underline; }
 .known-cargo { font-size:8pt; line-height:1.5; text-align:center; padding:7px 8px; }
+  /* Inventory Dashboard light look: white header bar instead of the dark brand gradient */
+  :root[data-theme="light"] #topbar { background: var(--charcoal); color: var(--light); box-shadow: 0 1px 4px rgba(15,23,42,.08); border-bottom: 1px solid var(--border); }
+  :root[data-theme="light"] #topbar h1 { color: var(--light); }
+  :root[data-theme="light"] #topbar p, :root[data-theme="light"] #topbar-right div { color: var(--muted) !important; }
+  :root[data-theme="light"] #top-inv { color: var(--light) !important; }
+  :root[data-theme="light"] .theme-toggle-btn { background: var(--charcoal); color: var(--light); }
 </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -472,7 +486,14 @@ function toggleTheme() {
   localStorage.setItem('sli-generator-theme', next);
   applyTheme(next);
 }
-applyTheme(localStorage.getItem('sli-generator-theme') || 'dark');
+applyTheme(localStorage.getItem('sli-generator-theme') || 'light');
+// Follow the Inventory Dashboard's theme when running inside it (it posts {type:'invdash-theme'}).
+window.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'invdash-theme' && (e.data.theme === 'light' || e.data.theme === 'dark')) {
+    localStorage.setItem('sli-generator-theme', e.data.theme); applyTheme(e.data.theme);
+  }
+});
+
 
 /* ══ ROUTE DATA ════════════════════════════════════════════════════════════ */
 var ROUTES = {
@@ -710,7 +731,7 @@ function routeSearch(q) {
 function routeUpdateHighlight() {
   var list = document.getElementById('f-route-list');
   Array.prototype.forEach.call(list.children, function(d, i) {
-    d.style.background = i === routeHighlight ? 'rgba(212,167,85,.12)' : '';
+    d.style.background = i === routeHighlight ? 'rgba(100,116,139,.12)' : '';
     if (i === routeHighlight) d.scrollIntoView({ block: 'nearest' });
   });
 }
