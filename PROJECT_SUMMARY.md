@@ -12,6 +12,9 @@ The tool described below as "still to do" has since been built and is **live and
 - Reskinned 2026-08-02 to match the SA Bullion brand system used by the other dashboards
   (Tyrian Purple/Satin Gold, Playfair Display, light/dark toggle) — aesthetics only, same fields
   and logic.
+- **Routes added 2026-09-22:** IBV Vault (Sandton City, Cnr Rivonia Rd & Central Sandton) both
+  directions with Brinks Bedfordview — `ibv-to-bfv` / `bfv-to-ibv` — plus IBV as a known location
+  and Uneil (083 324 8840) as its contact. Source: real SLI GLD10211 dated 01/09/2026.
 - **Invoice counter:** synced across everyone via a Cloudflare Worker
   (`sli-counter.abdelah-aragoneses.workers.dev`). The Worker's source lives at
   `worker\sli-counter-worker.js` in this project — it was rewritten from scratch 2026-08-02 to

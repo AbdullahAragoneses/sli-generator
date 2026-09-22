@@ -193,6 +193,8 @@
           <option value="reserve-to-bfv">Reserve Holdings → Brinks BFV</option>
           <option value="union-vault-to-bfv">Union Vault → Brinks BFV</option>
           <option value="bfv-to-union-vault">Brinks BFV → Union Vault</option>
+          <option value="ibv-to-bfv">IBV Vault → Brinks BFV</option>
+          <option value="bfv-to-ibv">Brinks BFV → IBV Vault</option>
           <option value="bfv-to-metcon">Brinks BFV → Metcon</option>
           <option value="sabis-to-mgmt">SABIS Account → Management Account</option>
           <option value="bfv-mgmt-to-sabis">BFV Management Account → SABIS Account</option>
@@ -682,6 +684,22 @@ var ROUTES = {
     brinksChg:'prepaid', userChg:'collect',
     responsible:'Abdullah Aragoneses', collContact:'Patrick Georgiades — 079 368 6084', delivContact:'Sophy — 082 897 7591'
   },
+  'ibv-to-bfv':{
+    label:'IBV Vault → Brinks BFV',
+    coll:{ name:'IBV Vault', addr:'Cnr Rivonia Road and Central Sandton\n5th St, Sandton City\nSandton, Johannesburg' },
+    deliv:{ name:'Brinks Global Services', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    consignee:'SABIS',
+    brinksChg:'prepaid', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'Uneil — 083 324 8840', delivContact:'Sophy — 082 897 7591'
+  },
+  'bfv-to-ibv':{
+    label:'Brinks BFV → IBV Vault',
+    coll:{ name:'Brinks Global Services', addr:'The Paragon\n1 Kramer Rd, Bedfordview\nGermiston, 2008' },
+    deliv:{ name:'IBV Vault', addr:'Cnr Rivonia Road and Central Sandton\n5th St, Sandton City\nSandton, Johannesburg' },
+    consignee:'IBV Vault',
+    brinksChg:'prepaid', userChg:'prepaid',
+    responsible:'Abdullah Aragoneses', collContact:'Sophy — 082 897 7591', delivContact:'Uneil — 083 324 8840'
+  },
   'custom':{
     label:'Custom / Other',
     coll:{ name:'', addr:'' }, deliv:{ name:'', addr:'' },
@@ -697,7 +715,7 @@ var ROUTE_ORDER = [
   'sez-to-bfv','bfv-to-sez','sa-mint-to-bfv','bfv-to-scoin',
   'cpt-to-scoin','rrl-to-bfv','rrl-to-cpt','metcon-to-sez','metcon-to-bfv',
   'perth-mint-to-bfv','ferrari-to-bfv','reserve-to-bfv',
-  'union-vault-to-bfv','bfv-to-union-vault','bfv-to-metcon',
+  'union-vault-to-bfv','bfv-to-union-vault','ibv-to-bfv','bfv-to-ibv','bfv-to-metcon',
   'sabis-to-mgmt','bfv-mgmt-to-sabis','sez-mgmt-to-sabis',
   'storage-movement','custom'
 ];
@@ -781,6 +799,7 @@ var CONTACTS = [
   { name:'Mokoena',             phone:'012 677 2435', loc:'SA Mint, Centurion' },
   { name:"Imran O'Brien",       phone:'',             loc:'Brinks' },
   { name:'Patrick Georgiades', phone:'079 368 6084', loc:'Union Vault, Pretoria' },
+  { name:'Uneil',              phone:'083 324 8840', loc:'IBV Vault, Sandton' },
 ];
 
 /* ══ KNOWN LOCATIONS (for the collection/delivery "pick a location" dropdowns) ══ */
@@ -798,12 +817,13 @@ var LOCATIONS = {
   'scoin':           { name:'SCOIN — South African Gold Coin Exchange',       addr:'South African Gold Coin Exchange\n129 Rivonia Rd, The Marc Tower 2\nFloor 12, Sandown' },
   'sabis-account':   { name:'SA BULLION INVESTOR SERVICES — Account 57403',   addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
   'mgmt-account':    { name:'SA Management Account — Account 59646',          addr:'Brinks Global Services\nParagon Building 1, Bedfordview\nGermiston, 2008' },
-  'union-vault':     { name:'Union Vault',                                    addr:'176 Bronkhorst Street\nNieuw Muckleneuk\nPretoria, Gauteng, 0181' }
+  'union-vault':     { name:'Union Vault',                                    addr:'176 Bronkhorst Street\nNieuw Muckleneuk\nPretoria, Gauteng, 0181' },
+  'ibv-vault':       { name:'IBV Vault',                                      addr:'Cnr Rivonia Road and Central Sandton\n5th St, Sandton City\nSandton, Johannesburg' }
 };
 var LOCATION_ORDER = [
   'brinks-bfv','vault-prive','cpt','rand-refinery','brinks-sez','metcon',
   'sa-mint','perth-mint','reserve-holdings','ferrari','scoin',
-  'sabis-account','mgmt-account','union-vault'
+  'sabis-account','mgmt-account','union-vault','ibv-vault'
 ];
 
 var PRODUCTS = [
